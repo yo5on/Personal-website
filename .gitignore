@@ -1,0 +1,16 @@
+# dependencies & build output
+node_modules/
+dist/
+
+# local environment
+.env
+.env.*
+!.env.example
+
+# local editor / agent tooling
+.claude/
+.DS_Store
+Thumbs.db
+
+# local design references (not part of the site)
+reference/
