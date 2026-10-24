@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react'
-import { github, linkedin } from '../data/content.js'
-import { BrandMoth, ExternalLink } from './Icons.jsx'
+import { BrandMoth } from './Icons.jsx'
+import SocialLinks from './SocialLinks.jsx'
 
 const links = [['Work', '#work'], ['Maker', '#maker'], ['Credentials', '#credentials'], ['Contact', '#contact']]
 // Page sections in order, and the nav link each one makes current.
@@ -97,8 +97,7 @@ export default function Nav() {
       </nav>
       <div className="nav-aside">
         <span className="nav-divider" aria-hidden="true" />
-        <ExternalLink href={github}>GitHub</ExternalLink>
-        <ExternalLink href={linkedin}>LinkedIn</ExternalLink>
+        <SocialLinks />
       </div>
       <button ref={menuButton} className="nav-menu" aria-expanded={open} aria-controls="menu-sheet" onClick={() => setOpen(v => !v)}>{open ? 'Close' : 'Menu'}</button>
     </motion.header>
@@ -113,7 +112,7 @@ export default function Nav() {
               <motion.a key={href} href={href} onClick={() => setOpen(false)} initial={reduced ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.7, delay: reduced ? 0 : 0.1 + i * 0.07, ease }}>{label}</motion.a>
             ))}
           </nav>
-          <div className="menu-foot"><ExternalLink href={github}>GitHub</ExternalLink><ExternalLink href={linkedin}>LinkedIn</ExternalLink></div>
+          <div className="menu-foot"><SocialLinks /></div>
         </motion.div>
       )}
     </AnimatePresence>

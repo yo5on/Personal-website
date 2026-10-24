@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { motion, useInView, useReducedMotion } from 'motion/react'
-import { email, github, linkedin } from '../data/content.js'
-import { ArrowUp, ArrowUpRight, BrandMoth, ExternalLink } from './Icons.jsx'
+import { email } from '../data/content.js'
+import { ArrowUp, ArrowUpRight, BrandMoth } from './Icons.jsx'
+import SocialLinks from './SocialLinks.jsx'
 import InkWord from './InkWord.jsx'
 
 const ease = [0.22, 1, 0.36, 1]
@@ -38,8 +39,7 @@ export function Contact() {
       <motion.a className="contact-mail" href={`mailto:${email}`} {...r(0.15)}>{email}<ArrowUpRight className="icon icon-mail" /></motion.a>
       <motion.div className="contact-links" {...r(0.25)}>
         <button onClick={copy} aria-live="polite">{copied ? 'Copied' : 'Copy email'}</button>
-        <ExternalLink href={github}>GitHub</ExternalLink>
-        <ExternalLink href={linkedin}>LinkedIn</ExternalLink>
+        <SocialLinks />
       </motion.div>
     </section>
   )
@@ -50,6 +50,7 @@ export function Footer() {
     <footer className="footer">
       <a className="brand" href="#top"><BrandMoth /><span className="brand-word">YOSON</span></a>
       <span>Think · Innovate · Fabricate</span>
+      <SocialLinks className="footer-social" />
       <span className="colophon">Set in Instrument Serif, Instrument Sans &amp; IBM Plex Mono · 3D bust adapted from sen-3d-resume (MIT) · 2026</span>
       <a className="back-top" href="#top">Back to top <ArrowUp /></a>
     </footer>

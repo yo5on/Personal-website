@@ -1,8 +1,8 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { email, github, linkedin, maker, projects } from '../data/content.js'
+import { maker, projects } from '../data/content.js'
 import { FOCUS_POINTS } from '../maker/focusPoints'
-import { ExternalLink } from './Icons.jsx'
+import SocialLinks from './SocialLinks.jsx'
 import { ProjectLink } from './Work.jsx'
 
 /*
@@ -59,9 +59,7 @@ function Node({ node, index, onOpen }) {
         )}
         {node.contact && (
           <div className="maker-contact">
-            <a href={`mailto:${email}`}>{email}</a>
-            <ExternalLink href={github}>GitHub</ExternalLink>
-            <ExternalLink href={linkedin}>LinkedIn</ExternalLink>
+            <SocialLinks />
             <a href="#credentials">Credentials ↓</a>
           </div>
         )}
