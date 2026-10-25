@@ -11,33 +11,22 @@ const reveal = { hidden: { y: '105%' }, shown: { y: '0%' } }
 
 /**
  * A link to a project's view. It is a real address (#work/<id>), so it can be shared or opened in a
- * new tab; a plain click opens the view in place, out of the project's card when that is in view.
+ * new tab; a plain click opens the view in place.
  */
 export function ProjectLink({ project, onOpen, className, children }) {
   return (
     <a className={className} href={`#work/${project.id}`} onClick={e => {
       if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return // new tab or window: let the browser follow the link
-      e.preventDefault(); onOpen(project, plateRect(project.id))
+      e.preventDefault(); onOpen(project)
     }}>{children}</a>
   )
-}
-
-/** The on-screen box of a project's card figure, or null unless at least half of it is in view. */
-export function plateRect(id) {
-  const el = document.querySelector(`[data-plate="${id}"] .plate`)
-  if (!el) return null
-  const r = el.getBoundingClientRect()
-  const seen = Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0)
-  if (!r.width || seen < r.height / 2) return null
-  return { top: r.top, left: r.left, right: window.innerWidth - r.right, bottom: window.innerHeight - r.bottom }
 }
 
 function Entry({ project, index, onOpen }) {
   const reduced = useReducedMotion()
   const flip = index % 2 === 1
   const t = (delay = 0) => ({ duration: reduced ? 0 : 1.1, delay: reduced ? 0 : delay, ease })
-  // The view opens out of this project's figure, whichever control was used.
-  const open = () => onOpen(project, plateRect(project.id))
+  const open = () => onOpen(project)
   return (
     <motion.li className={flip ? 'entry is-flipped' : 'entry'} initial="rest" whileHover="hover" animate="rest">
       <div className="entry-rule">

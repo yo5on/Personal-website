@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion, useIsPresent, useReducedMotion } from 'motion/react'
 import { github, projects, studies } from '../data/content.js'
 import Plate from './Plate.jsx'
 import { ArrowRight, Close, ExternalLink } from './Icons.jsx'
 
-const ease = [0.76, 0, 0.24, 1]
 const soft = [0.22, 1, 0.36, 1]
 
 // One labelled row of a case study: a small mono label beside the text it introduces.
@@ -74,24 +73,19 @@ function Study({ project, study, rise, plateIn, reduced }) {
   )
 }
 
-// The reveal is a clip-path inset in pixels: from a card figure's box out to the full screen,
-// and back into the card on close when it is in view; otherwise it wipes up from the bottom
-// and away to the top, as before. Reduced motion keeps a plain fade.
-const inset = r => `inset(${r.top}px ${r.right}px ${r.bottom}px ${r.left}px)`
-
-export default function CaseView({ project, origin, onClose, onNavigate }) {
+export default function CaseView({ project, onClose, onNavigate }) {
   const reduced = useReducedMotion()
+  const present = useIsPresent()
   const panel = useRef(null)
   const closeBtn = useRef(null)
   const i = projects.findIndex(p => p.id === project.id)
   const next = projects[(i + 1) % projects.length]
   const study = studies[project.id]
-  // The image is shown from the first frame (no fade) when a delayed fade would leave empty navy on screen:
-  // opened out of a card, the view is first clipped to that card's box; and on Next study the open panel swaps
-  // projects while the new title and text are still masked. A first open from elsewhere keeps the fade.
+  // On Next study the open panel swaps projects while the new title and text are still masked, so the image is
+  // shown from the first frame there (no fade) rather than leaving empty navy on screen. A first open keeps the fade.
   const firstProjectId = useRef(project.id)
   const switched = project.id !== firstProjectId.current
-  const plateIn = origin || switched ? {} : null
+  const plateIn = switched ? {} : null
 
   useEffect(() => {
     // Return focus to whatever opened the view; a click on a card image leaves nothing focused,
@@ -142,15 +136,13 @@ export default function CaseView({ project, origin, onClose, onNavigate }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="case-title"
-      variants={{
-        enter: reduced ? { opacity: 0 } : { clipPath: origin ? inset(origin) : `inset(${window.innerHeight}px 0px 0px 0px)` },
-        shown: reduced ? { opacity: 1 } : { clipPath: 'inset(0px 0px 0px 0px)' },
-        leave: to => reduced ? { opacity: 0 } : { clipPath: to ? inset(to) : `inset(0px 0px ${window.innerHeight}px 0px)` },
-      }}
-      initial="enter"
-      animate="shown"
-      exit="leave"
-      transition={{ duration: reduced ? 0 : 0.95, ease }}
+      // Fades in rising a few pixels and out sinking back, on one curve; reduced motion keeps the fade alone.
+      // The leaving panel ignores clicks.
+      initial={{ opacity: 0, y: reduced ? 0 : 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: reduced ? 0 : 8 }}
+      transition={{ duration: reduced ? 0 : 0.26, ease: soft }}
+      style={present ? undefined : { pointerEvents: 'none' }}
     >
       <div className="case-bar">
         <span>N° {project.n} &nbsp;·&nbsp; <span className="verb-tag">{project.verb}</span> &nbsp;·&nbsp; {project.type}</span>

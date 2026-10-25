@@ -138,7 +138,7 @@ diffuseColor.rgb = eyeLook(uEyeClean1, uEyeBg1, uEyeBox1, uIris1, uOff1, diffuse
     // Both eyes turn together, so each direction gets the travel the tighter eye allows (e.g. looking to the
     // viewer's right is limited by the left eye's nasal corner and the right eye's outer corner)
     reach = l.reach.map((v, i) => Math.min(v, r.reach[i]))
-  })
+  }).catch((e) => console.warn('[eyeTracking] eye analysis failed; eyes stay static', e)) // never rejects: Scene's reveal waits on it
 
   return {
     ready,

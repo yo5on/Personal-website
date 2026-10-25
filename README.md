@@ -40,7 +40,7 @@
 - <samp>One canvas, rendered only while the chapter is on screen (<code>frameloop="never"</code> otherwise); unmounting it disposes the renderer.</samp>
 - <samp>Desktop: <code>me.glb</code> (1.46 MB, 4096² texture), DPR ≤ 1.5 dropping to 1 if the GPU can't hold ~45 fps, depth of field + bloom + SMAA, shadows.</samp>
 - <samp>Phones (touch or ≤ 760 px): <code>me-phone.glb</code> (630 KB, 2048² texture, ~104k vs ~192k triangles, made with gltf-transform resize → simplify → draco), DPR 1, no post-processing, no shadows; the bust fills the top of the screen and the cards scroll over the rest.</samp>
-- <samp>A WebP poster of the opening shot (26 KB / 13 KB) stands in while loading, and for good without WebGL, with Save-Data, after a load error, or when the visitor switches 3D off (remembered per browser).</samp>
+- <samp>The brand starburst turns (CSS only, no extra WebGL context) over the sky while the scene loads, and stays, still, with a message, only without WebGL or after a load error; the 3D cannot be switched off.</samp>
 
 ---
 
@@ -71,7 +71,7 @@ npm run preview    # serve the production build
 public/
   certificates/      certificate PDFs and previews (from yo5on/Portfolio)
   fonts/             wordmark and handwriting fonts, with their licences
-  images/            moth artwork, favicon, social preview, project images (work/), Maker poster
+  images/            moth artwork, favicon, social preview, project images (work/)
   maker/             me.glb and me-phone.glb
 src/
   components/        Hero, Work, Plate, CaseView, Maker, Certificates, Sections, Nav, Icons…

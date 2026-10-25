@@ -5,7 +5,7 @@ import Scene from './Scene'
 import NoiseOverlay from './NoiseOverlay'
 
 // The lazily loaded 3D chunk (three, R3F, postprocessing and the scene). Maker.jsx imports it only when the
-// chapter is about a screen away, wraps it in an error boundary and keeps the poster up until onReady.
+// chapter is about a screen away, wraps it in an error boundary and keeps the loading starburst up until onReady.
 
 // Render resolution: up to 1.5× on desktop; drops to 1× for good if the GPU can't hold ~45 fps
 // (Aboutme measured about 2× faster at 1× on an Intel UHD 620).

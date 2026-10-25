@@ -232,7 +232,7 @@ function Man({
 
   // Model parsed, decals built and mounted: compile the scene's programs without blocking (KHR_parallel_shader_compile)
   // while it stays hidden, so the post passes compile in the same frames instead of after it; then show it → the
-  // poster can go. Drawn straight away, the face shader's compile blocked the page for ~1 s on a cold cache.
+  // loader can go. Drawn straight away, the face shader's compile blocked the page for ~1 s on a cold cache.
   const [shown, setShown] = useState(false)
   useEffect(() => {
     let live = true
@@ -347,7 +347,8 @@ function Man({
     }
     // 2) Smoothed frame: opening stop at 0, node k at (k+1)·50
     const frameTarget = THREE.MathUtils.clamp((sTarget + 1) * FRAMES_PER_NODE, 0, RESUME_FRAMES)
-    frameSmooth.current += (frameTarget - frameSmooth.current) * a
+    // snapped while hidden, so the bust fades in already framed for the scroll position instead of sweeping there
+    frameSmooth.current += (frameTarget - frameSmooth.current) * (shown ? a : 1)
     const frame = frameSmooth.current
     frameRef.current = frame
     const s = THREE.MathUtils.clamp(frame / FRAMES_PER_NODE - 1, -1, M - 1)

@@ -634,11 +634,24 @@ main { min-height: calc(100svh - 90px); } /* short pages (Contact) keep the foot
 /* Fig. 02 — The Maker: a sticky stage behind ordinary scrolling cards */
 /* ------------------------------------------------------------------ */
 .maker { position: relative; overflow-x: clip; background: var(--navy); }
-/* the stage is Aboutme's fixed scene layer: its sky gradient shows while the canvas loads and fades in (0.9s) */
+/* the stage is Aboutme's fixed scene layer: its sky gradient shows while the canvas loads and fades in (0.5s) */
 .maker-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; background: linear-gradient(to top, var(--stage-bottom), var(--stage-top)); }
-.maker-poster, .maker-canvas { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
-.maker-poster { object-fit: cover; }
-.maker-canvas { opacity: 0; transition: opacity 0.9s ease; }
+.maker-canvas { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
+/* the loader: the brand starburst over the bust's face, turning slowly while the scene loads. It fades in, then stops
+   where it is and fades out as the canvas fades in. */
+.maker-loader { position: absolute; left: 50%; top: 40%; width: clamp(44px, 8vmin, 76px); aspect-ratio: 1087 / 1066; translate: -50% -50%;
+  animation: maker-loader-in 0.8s var(--ease) backwards;
+  transition: opacity 0.5s ease, visibility 0s linear 0.5s; }
+.maker-loader-mark { position: absolute; inset: 0; background: var(--crimson); animation: maker-loader-turn 12s infinite; -webkit-mask: url(/images/starburst.svg) center / contain no-repeat; mask: url(/images/starburst.svg) center / contain no-repeat; }
+.maker-stage.is-live .maker-loader { opacity: 0; visibility: hidden; } /* a plain crossfade with the canvas */
+.maker-stage.is-live .maker-loader-mark { animation-play-state: paused; } /* freezes mid-turn, no snap back */
+.maker-loader.is-still .maker-loader-mark { animation: none; }
+.maker-loader.is-still { opacity: 0.55; }
+@keyframes maker-loader-in { from { opacity: 0; } }
+/* each half turn eases in and out, so the mark drifts and settles rather than spinning at a fixed rate */
+@keyframes maker-loader-turn { from { rotate: 0deg; animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1); } 50% { rotate: 180deg; animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1); } to { rotate: 360deg; } }
+/* the bust fades in where it stands: opacity only, no scale or camera move */
+.maker-canvas { opacity: 0; transition: opacity 0.5s ease; }
 .maker-stage.is-live .maker-canvas { opacity: 1; }
 /* Aboutme's scrim: darkens only the right (timeline) side as the page scrolls (opacity 0 → 0.4, Maker.jsx) */
 .maker-scrim { position: absolute; inset: 0; pointer-events: none;
@@ -695,13 +708,9 @@ html:has(.maker) { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
 .maker-contact > a { color: var(--stone); padding: 6px 0; }
 .maker-contact > a:hover, .maker-contact > a:focus-visible { color: var(--crimson-text); }
 
-/* toggle + status: a column spanning the chapter whose contents stick to the bottom-left of the screen */
+/* status: a column spanning the chapter whose contents stick to the bottom-left of the screen */
 .maker-controls { position: absolute; z-index: 3; left: var(--gutter); top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 24px; pointer-events: none; }
 .maker-controls-inner { position: sticky; bottom: 24px; pointer-events: auto; }
-.maker-toggle { display: inline-flex; align-items: center; gap: 10px; padding: 8px 0; font: 500 var(--fs-label)/1 var(--ui); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--stone); }
-.maker-toggle-dot { width: 22px; height: 12px; border: 1px solid var(--stone-faint); border-radius: 6px; position: relative; }
-.maker-toggle-dot::after { content: ''; position: absolute; top: 2px; left: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--stone-soft); transition: transform 0.3s var(--ease), background 0.3s; }
-.maker-toggle[aria-pressed="true"] .maker-toggle-dot::after { transform: translateX(10px); background: var(--crimson); }
 .maker-status { min-height: 1.6em; font: italic 400 12px/1.6 var(--ui); color: var(--stone-soft); }
 
 @media (max-width: 760px) {
@@ -720,10 +729,9 @@ html:has(.maker) { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
   .maker-nodes { padding-top: 22svh; }
   .maker-node { width: auto; margin: 0; }
   .maker-card { padding: 20px 22px; background: rgba(13, 15, 42, 0.6); border-top: 1px solid var(--crimson); }
-  /* the toggle moves to the top-right, under the nav bar, clear of the cards */
+  /* the status moves to the top-right, under the nav bar, clear of the cards */
   .maker-controls { left: auto; right: var(--gutter); justify-content: flex-start; padding: 0; }
   .maker-controls-inner { top: 76px; bottom: auto; text-align: right; }
-  .maker-toggle { padding: 8px 10px; background: rgba(13, 15, 42, 0.72); }
 }
 
 /* Social links: GitHub / LinkedIn / email as small circular icon buttons (the Aboutme treatment) in nav, menu,
@@ -758,5 +766,4 @@ html:has(.maker) { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
 @media (hover: hover) { :root[data-palette] .social > li > a:hover { background: rgba(var(--surface-rgb), 0.9); } }
 @media (max-width: 640px) {
   :root:is([data-palette], [data-stage]) .maker-card { background: rgba(var(--bg-rgb), 0.6); }
-  :root:is([data-palette], [data-stage]) .maker-toggle { background: rgba(var(--bg-rgb), 0.72); }
 }

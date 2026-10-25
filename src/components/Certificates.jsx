@@ -60,12 +60,14 @@ export function Certificates({ onOpen }) {
                 <motion.a key={it.title} className="cs-card" href={it.file ?? it.verify} target="_blank" rel="noreferrer" tabIndex={-1} aria-hidden="true" draggable={false}
                   initial={false}
                   animate={reduced ? { opacity: on ? 1 : 0, x: 0, zIndex: on ? 2 : 0 }
-                    : on ? { opacity: [0, 1], x: [dir * SLIDE, 0], zIndex: 2 }
-                    : under ? { opacity: [1, 1, 0], x: [0, -dir * SLIDE * 0.5], zIndex: 1 }
-                    : { opacity: 0, x: 0, zIndex: 0 }}
-                  transition={reduced || !(on || under) ? { duration: 0 }
+                    : on ? { opacity: 1, x: [dir * SLIDE, 0], zIndex: 2 }
+                    : under ? { opacity: 0, x: -dir * SLIDE * 0.5, zIndex: 1 }
+                    : { opacity: 0, zIndex: 0 }}
+                  // Opacity always moves from where it is: on quick clicks a half-faded card never snaps to full or to
+                  // nothing. Cards being covered hold, then fade once the incoming one is opaque.
+                  transition={reduced ? { duration: 0 }
                     : on ? { opacity: { duration: 0.3, ease }, x: { duration: 0.55, ease }, zIndex: { duration: 0 } }
-                    : { opacity: { duration: 0.45, times: [0, 0.7, 1] }, x: { duration: 0.45, ease }, zIndex: { duration: 0 } }}
+                    : { opacity: { duration: 0.15, delay: 0.3 }, x: { duration: 0.45, ease }, zIndex: { duration: 0 } }}
                   style={{ pointerEvents: on ? 'auto' : 'none' }}>
                   <img src={preview(it, 720)} srcSet={`${preview(it, 720)} 720w, ${preview(it, 1280)} 1280w`} sizes="(max-width: 760px) 90vw, 560px"
                     alt="" loading="lazy" decoding="async" draggable={false} />

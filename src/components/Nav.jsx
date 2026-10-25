@@ -85,7 +85,8 @@ export default function Nav({ page }) {
     <div id="menu-sheet">
     <AnimatePresence>
       {open && (
-        <motion.div ref={sheet} className="menu-sheet" role="dialog" aria-modal="true" aria-label="Site menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduced ? 0 : 0.5, ease }}>
+        <motion.div key="menu" ref={sheet} className="menu-sheet" role="dialog" aria-modal="true" aria-label="Site menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          exit={{ opacity: 0, pointerEvents: 'none', transition: { duration: reduced ? 0 : 0.3, ease: [0.4, 0, 0.2, 1] } }} transition={{ duration: reduced ? 0 : 0.4, ease }}>
           <nav aria-label="Mobile">
             {links.map(([label, href], i) => (
               <motion.a key={href} href={href} aria-current={active === href ? 'page' : undefined} onClick={() => setOpen(false)} initial={reduced ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.7, delay: reduced ? 0 : 0.1 + i * 0.07, ease }}>{label}</motion.a>

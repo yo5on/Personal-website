@@ -9,14 +9,15 @@ import { ProjectLink } from './Work.jsx'
  * Fig. 02 — The Maker. About, practice and résumé as one chapter around the 3D bust from the Aboutme site.
  * The page scrolls normally: the stage is only `position: sticky` behind the timeline cards, and the camera
  * follows the cards (src/maker/progress.ts). The WebGL chunk loads when the chapter is about a screen away
- * (or earlier, on idle) and renders only while the chapter is on screen; a still stands in without WebGL,
- * with Save-Data, or with 3D switched off.
+ * (or earlier, on idle) and renders only while the chapter is on screen. The 3D is always on: the starburst turns
+ * slowly only while a load genuinely takes time, and stays (still, with a message) only without WebGL or after a failed load.
  */
 
 const loadCanvas = () => import('../maker/MakerCanvas.tsx')
 const MakerCanvas = lazy(loadCanvas)
 const ease = [0.22, 1, 0.36, 1]
-const PREF = 'maker-3d' // per-viewer convenience only: 'on' | 'off'
+const LOADER_DELAY = 350 // ms of loading before the starburst shows, so a quick (cached) start never flashes it
+let warm = false // the scene was ready once this page load: model cached, so a remount skips the loader
 
 const hasWebGL = () => {
   try {
@@ -26,13 +27,10 @@ const hasWebGL = () => {
     return !!gl
   } catch { return false }
 }
-const saveData = () => navigator.connection?.saveData === true
-const readPref = () => { try { return localStorage.getItem(PREF) } catch { return null } }
-const writePref = v => { try { localStorage.setItem(PREF, v) } catch { /* storage blocked: the toggle still works for this visit */ } }
 // Phones (touch or ≤640px, Aboutme's breakpoint): the same scene, pulled back for full-width cards (see Scene.tsx).
 const isPhone = () => window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 640
 
-// Catches a failed chunk, WebGL context or model load; the poster stays and the chapter still reads.
+// Catches a failed chunk, WebGL context or model load; the starburst stops turning and the chapter still reads.
 class Boundary extends Component {
   state = { failed: false }
   static getDerivedStateFromError() { return { failed: true } }
@@ -72,13 +70,13 @@ export default function Maker({ onOpen }) {
   const reduced = useReducedMotion()
   const section = useRef(null)
   const [webgl] = useState(hasWebGL)
-  const [on, setOn] = useState(() => { const p = readPref(); return p ? p === 'on' : !saveData() })
   const [near, setNear] = useState(false) // within about a screen: start loading
   const [visible, setVisible] = useState(false) // on screen: render
   const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [slow, setSlow] = useState(false) // still loading after LOADER_DELAY: show the starburst
   const phone = useMemo(isPhone, [near]) // decided when the 3D mounts, not at page load
-  const enabled = webgl && on && !failed
+  const enabled = webgl && !failed
 
   // Aboutme's scroll transitions (App.tsx), same offsets: the intro blurs, fades and drifts up (title faster,
   // letter-spacing opening) from when its top reaches 60% of the viewport; the cue, the hero's bottom gradient and
@@ -124,28 +122,30 @@ export default function Maker({ onOpen }) {
     return () => cancelIdleCallback(id)
   }, [enabled])
 
-  const toggle = () => { const v = !on; setOn(v); writePref(v ? 'on' : 'off'); if (!v) setReady(false) }
+  useEffect(() => {
+    if (!enabled || !near || ready || warm) return
+    const id = setTimeout(() => setSlow(true), LOADER_DELAY)
+    return () => clearTimeout(id)
+  }, [enabled, near, ready])
+
   // 'maker-3d-visible' marks the first frame drawn after mount (shader compile included), for load measurements
-  const onReady = useCallback(() => { setReady(true); requestAnimationFrame(() => requestAnimationFrame(() => performance.mark('maker-3d-visible'))) }, [])
+  const onReady = useCallback(() => { warm = true; setReady(true); requestAnimationFrame(() => requestAnimationFrame(() => performance.mark('maker-3d-visible'))) }, [])
   const onError = useCallback(() => { setFailed(true); setReady(false) }, [])
 
-  const status = !webgl ? '3D needs WebGL — showing a still'
-    : failed ? 'The 3D portrait could not load — showing a still'
-    : !on ? '3D off — showing a still'
-    : near && !ready ? 'Loading the 3D portrait…' : ''
+  const status = !webgl ? 'The 3D portrait needs WebGL, which is off or unsupported in this browser'
+    : failed ? 'The 3D portrait could not load. Reloading the page may help'
+    : slow && !ready ? 'Loading the 3D portrait…' : ''
 
   return (
     <section className="maker" id="maker" ref={section} aria-labelledby="maker-title">
       <motion.div className={ready && enabled ? 'maker-stage is-live' : 'maker-stage'} style={{ opacity: stageOpacity }} aria-hidden="true">
-        {/* the still shows at once and stays under the canvas, which fades in over it once the scene is ready (or never:
-            no WebGL, 3D off, or a failed load) */}
-        {/* rendered from the live opening frame (wide for landscape, 1:2 for phones, 3:4 for portrait tablets) and
-            centred, so cover-scaling by the height matches the 3D framing, which is set by the height too */}
-        <picture>
-          <source media="(max-aspect-ratio: 3/5)" srcSet="images/maker-poster-phone.webp" />
-          <source media="(max-aspect-ratio: 1/1)" srcSet="images/maker-poster-tablet.webp" />
-          <img className="maker-poster" src="images/maker-poster.webp" srcSet="images/maker-poster-1200.webp 1200w, images/maker-poster.webp 2400w" sizes="240svh" alt="" width="2400" height="1000" decoding="async" fetchPriority="high" />
-        </picture>
+        {/* the turning starburst shows over the sky only once a load is slow, and dissolves as the canvas fades in once the
+            scene is ready; without 3D (no WebGL, a failed load) it stays, dimmed. */}
+        {(slow || !enabled) && (
+          <div className={enabled ? 'maker-loader' : 'maker-loader is-still'}>
+            <span className="maker-loader-mark" />
+          </div>
+        )}
         {enabled && near && (
           <Boundary onError={onError}>
             <Suspense fallback={null}>
@@ -183,11 +183,6 @@ export default function Maker({ onOpen }) {
 
       <div className="maker-controls">
         <div className="maker-controls-inner">
-          {webgl && (
-            <button type="button" className="maker-toggle" aria-pressed={on} onClick={toggle}>
-              <span className="maker-toggle-dot" aria-hidden="true" />3D {on ? 'on' : 'off'}
-            </button>
-          )}
           <p className="maker-status" role="status">{status}</p>
         </div>
       </div>
