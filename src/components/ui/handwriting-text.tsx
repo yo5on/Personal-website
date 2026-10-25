@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Text that writes itself, then inks in. No dependencies.
+ * Text that writes itself, then inks in.
  *
  * Three things make this behave like handwriting rather than like a fade:
  *
@@ -22,10 +22,8 @@ import { useEffect, useRef, useState } from "react";
  *    it together with the outer contour. Fill the split paths individually and every
  *    letter becomes a blob.
  *
- * The glyph parsing is done by opentype.js, loaded from a CDN as a plain <script> at
- * first use rather than imported as a package. That keeps the component installable
- * anywhere with no dependency to add, and a <script> tag sidesteps the ESM/CJS interop
- * that a bundled import of this particular library tends to trip over. It is fetched once
+ * The glyph parsing is done by opentype.js, the npm package (bundled, no third-party CDN),
+ * imported dynamically at first use so it stays out of the main chunk. It is fetched once
  * per page and cached by the browser.
  *
  * If either the library or the font fails to load, the component renders the text as an
@@ -33,8 +31,6 @@ import { useEffect, useRef, useState } from "react";
  *
  * Colour comes from `currentColor`, so `className="text-emerald-600"` styles it.
  */
-
-const OPENTYPE_CDN = "https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js";
 
 const DEFAULT_FONT_URL =
   "https://cdn.21st.dev/assets/mirror/13/1347863151acdc00fa281daaba1a3543dbce5870b55f9cf7479a15bb84007681.ttf";
@@ -86,30 +82,6 @@ type Geometry = {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// The library, loaded once per page.
-let libPromise: Promise<any> | null = null;
-
-function loadOpentype(): Promise<any> {
-  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
-  const existing = (window as any).opentype;
-  if (existing) return Promise.resolve(existing);
-  if (!libPromise) {
-    libPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = OPENTYPE_CDN;
-      script.async = true;
-      script.onload = () => {
-        const lib = (window as any).opentype;
-        if (lib) resolve(lib);
-        else reject(new Error("opentype.js loaded but exposed nothing"));
-      };
-      script.onerror = () => reject(new Error("opentype.js failed to load"));
-      document.head.appendChild(script);
-    });
-  }
-  return libPromise;
-}
-
 // One fetch and one parse per font URL, shared by every instance on the page.
 const fontCache = new Map<string, Promise<any>>();
 
@@ -117,7 +89,7 @@ function loadFont(url: string): Promise<any> {
   let pending = fontCache.get(url);
   if (!pending) {
     pending = Promise.all([
-      loadOpentype(),
+      import("opentype.js"),
       fetch(url).then((res) => {
         if (!res.ok) throw new Error(`Font request failed: ${res.status}`);
         return res.arrayBuffer();
