@@ -1,5 +1,5 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { maker, projects } from '../data/content.js'
 import { FOCUS_POINTS } from '../maker/focusPoints'
 import SocialLinks from './SocialLinks.jsx'
@@ -9,8 +9,8 @@ import { ProjectLink } from './Work.jsx'
  * Fig. 02 — The Maker. About, practice and résumé as one chapter around the 3D bust from the Aboutme site.
  * The page scrolls normally: the stage is only `position: sticky` behind the timeline cards, and the camera
  * follows the cards (src/maker/progress.ts). The WebGL chunk loads when the chapter is about a screen away
- * (or earlier, on idle), renders only while the chapter is on screen, and a poster of the opening shot
- * stands in until it is ready — or for good without WebGL, with Save-Data, or with 3D switched off.
+ * (or earlier, on idle) and renders only while the chapter is on screen; a still stands in without WebGL,
+ * with Save-Data, or with 3D switched off.
  */
 
 const loadCanvas = () => import('../maker/MakerCanvas.tsx')
@@ -29,8 +29,8 @@ const hasWebGL = () => {
 const saveData = () => navigator.connection?.saveData === true
 const readPref = () => { try { return localStorage.getItem(PREF) } catch { return null } }
 const writePref = v => { try { localStorage.setItem(PREF, v) } catch { /* storage blocked: the toggle still works for this visit */ } }
-// Phones (touch or narrow): the lighter model, 1× resolution, no post-processing, no shadows.
-const isPhone = () => window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 760
+// Phones (touch or ≤640px, Aboutme's breakpoint): the same scene, pulled back for full-width cards (see Scene.tsx).
+const isPhone = () => window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 640
 
 // Catches a failed chunk, WebGL context or model load; the poster stays and the chapter still reads.
 class Boundary extends Component {
@@ -60,7 +60,7 @@ function Node({ node, index, onOpen }) {
         {node.contact && (
           <div className="maker-contact">
             <SocialLinks />
-            <a href="#credentials">Credentials ↓</a>
+            <a href="#credentials">Credentials →</a>
           </div>
         )}
       </motion.article>
@@ -79,6 +79,31 @@ export default function Maker({ onOpen }) {
   const [failed, setFailed] = useState(false)
   const phone = useMemo(isPhone, [near]) // decided when the 3D mounts, not at page load
   const enabled = webgl && on && !failed
+
+  // Aboutme's scroll transitions (App.tsx), same offsets: the intro blurs, fades and drifts up (title faster,
+  // letter-spacing opening) from when its top reaches 60% of the viewport; the cue, the hero's bottom gradient and
+  // the right-hand scrim follow page scroll; the frosted rail fades in as the cards arrive.
+  const intro = useRef(null)
+  const { scrollY } = useScroll()
+  // Aboutme's ['start 0.6', 'start start'] offsets, but never already under way at scroll 0: this intro is taller,
+  // so on short screens its top starts above the 60% line and the copy loaded blurred.
+  const introProgress = useTransform(scrollY, y => {
+    const el = intro.current
+    if (!el) return 0
+    const top = el.getBoundingClientRect().top + y
+    const start = Math.max(0, top - window.innerHeight * 0.6)
+    return Math.min(Math.max((y - start) / Math.max(1, top - start), 0), 1)
+  })
+  const introBlur = useTransform(introProgress, [0, 0.5], ['blur(0px)', 'blur(16px)'])
+  const introOpacity = useTransform(introProgress, [0, 0.5], [1, 0])
+  const titleY = useTransform(introProgress, [0, 1], [0, -96])
+  const bodyY = useTransform(introProgress, [0, 1], [0, -52])
+  const titleSpacing = useTransform(introProgress, [0, 1], ['0em', '0.42em'])
+  const vh = window.innerHeight
+  const scrimOpacity = useTransform(scrollY, [0, 520], [0, 0.4])
+  const cueOpacity = useTransform(scrollY, [0, 160], [1, 0])
+  const gradientOpacity = useTransform(scrollY, [0, 240], [1, 0])
+  const railOpacity = useTransform(scrollY, [vh * 0.5, vh * 1.1], [0, 1])
 
   useEffect(() => {
     const el = section.current
@@ -107,7 +132,8 @@ export default function Maker({ onOpen }) {
   return (
     <section className="maker" id="maker" ref={section} aria-labelledby="maker-title">
       <div className={ready && enabled ? 'maker-stage is-live' : 'maker-stage'} aria-hidden="true">
-        <img className="maker-poster" src="images/maker-poster.webp" srcSet="images/maker-poster-900.webp 900w, images/maker-poster.webp 1600w" sizes="100vw" alt="" width="1600" height="1000" loading="lazy" decoding="async" />
+        {/* still only without live 3D; while the scene loads the stage shows its sky and the canvas fades in, as in Aboutme */}
+        {!enabled && <img className="maker-poster" src="images/maker-poster.webp" srcSet="images/maker-poster-900.webp 900w, images/maker-poster.webp 1600w" sizes="100vw" alt="" width="1600" height="1000" decoding="async" />}
         {enabled && near && (
           <Boundary onError={onError}>
             <Suspense fallback={null}>
@@ -115,17 +141,28 @@ export default function Maker({ onOpen }) {
             </Suspense>
           </Boundary>
         )}
-        <div className="maker-shade" />
+        <motion.div className="maker-scrim" style={{ opacity: scrimOpacity }} />
+        <motion.div className="maker-rail" style={{ opacity: railOpacity }} />
+        <motion.div className="maker-gradient" style={{ opacity: gradientOpacity }} />
       </div>
 
       <div className="maker-flow">
         <header className="maker-intro">
-          <p className="kicker">03 — Fig. 02</p>
-          <motion.h2 id="maker-title" className="maker-title" initial={reduced ? false : 'hidden'} whileInView="shown" viewport={{ once: true, amount: 0.5 }}>
-            <span className="mask"><motion.span variants={{ hidden: { y: '105%' }, shown: { y: '0%' } }} transition={{ duration: reduced ? 0 : 1.2, ease }}>The <em>maker.</em></motion.span></span>
-          </motion.h2>
-          <motion.p className="maker-lede" initial={reduced ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: reduced ? 0 : 1, delay: reduced ? 0 : 0.15, ease }}>{maker.intro}</motion.p>
-          <p className="maker-hint">Background &amp; résumé below — Education, Think, Innovate, Fabricate, Say hi.</p>
+          {/* the scroll-out lives on outer wrappers so it never fights the entrance animations inside */}
+          <motion.div ref={intro} style={reduced ? { opacity: introOpacity } : { filter: introBlur, opacity: introOpacity }}>
+            {/* Entrance on mount (this is the first screen): painted blurred from the first frame, resolving to crisp.
+                No clipping mask, which would hide the blur instead of showing it. */}
+            <motion.h2 id="maker-title" className="maker-title" style={reduced ? undefined : { y: titleY, letterSpacing: titleSpacing }}>
+              <motion.span className="maker-title-text" initial={reduced ? false : { opacity: 0.35, y: 22, filter: 'blur(18px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 1.8, delay: 0.25, ease }}>The <em>maker.</em></motion.span>
+            </motion.h2>
+            <motion.div style={reduced ? undefined : { y: bodyY }}>
+              <motion.p className="maker-lede" initial={reduced ? false : { opacity: 0.25, y: 16, filter: 'blur(12px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 1.6, delay: 0.55, ease }}>{maker.intro}</motion.p>
+            </motion.div>
+          </motion.div>
+          <motion.div className="maker-cue" style={{ opacity: cueOpacity }} aria-hidden="true">
+            <span className="maker-cue-label">Scroll</span>
+            <span className="maker-cue-track"><span className="maker-cue-dot" /></span>
+          </motion.div>
         </header>
         <ol className="maker-nodes" aria-label="Background and résumé">
           {maker.nodes.map((n, i) => <Node key={n.kicker} node={n} index={i} onOpen={onOpen} />)}

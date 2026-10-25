@@ -61,13 +61,6 @@ const rawProjects = [
   },
   // From the Aboutme site and each repository's README.
   {
-    id: 'pest', verb: 'think', title: 'Pest Monitoring', type: 'Agentic AI · Team project',
-    intro: 'An agentic AI framework for agriculture: field data flows through AI / ML analysis to recommendations and a monitoring dashboard.',
-    detail: 'Agentic AI-Based Pest Monitoring Framework for Sustainable Agricultural Productivity and Resource Optimization: an academic team project that aims to spot pest problems before visible damage spreads and to spend inputs only where they are needed. Field data moves through data collection, AI / ML analysis and an agentic decision-and-recommendation step to a web dashboard. Real-time IoT sensors, image-based pest detection and weather data are listed as future work.',
-    stack: ['Python', 'AI / ML', 'Agentic workflow', 'Web dashboard'], plate: 'flow', caption: 'Field data → decision',
-    repo: 'https://github.com/yo5on/Agentic-AI-Pest-Monitoring',
-  },
-  {
     id: 'tutor', verb: 'think', title: 'AI Personal Tutor', type: 'LLM Application',
     intro: 'A study workspace that teaches concepts step by step from your own material, generates quizzes and tracks weak topics.',
     detail: 'The tutor explains from the basics with examples and analogies, checks understanding and gives hints before answers. Uploaded PDF or TXT notes become the source for tutoring and multiple-choice quizzes, which are checked on the server; progress tracks accuracy, weak topics and missed questions. The Gemini key is read only in server code: the browser talks to the app’s own API routes.',
@@ -178,9 +171,8 @@ export const maker = {
     { kicker: 'Think', verb: 'think', title: 'Data-driven, explainable tools',
       points: [
         'FakeGuard — full-stack developer on a Tech Utsav hackathon team: a rule-based, explainable 0–100 risk score with reason codes, on synthetic data',
-        'Agentic AI pest monitoring — academic team project: field data → AI / ML analysis → recommendations',
         'AI Personal Tutor — Next.js and Gemini: tutoring and quizzes from your own notes',
-      ], work: ['fakeguard', 'pest', 'tutor'] },
+      ], work: ['fakeguard', 'tutor'] },
     { kicker: 'Innovate', verb: 'innovate', title: 'Software people actually use',
       points: [
         'Daymark — a study planner that re-plans the day around time, exams and how sessions went; deterministic, runs in the browser',

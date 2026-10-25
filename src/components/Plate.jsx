@@ -82,30 +82,7 @@ function Arm() {
   </>
 }
 
-// The pest-monitoring pipeline from its README: data collection → AI / ML analysis → agentic decision → dashboard,
-// with a leaf as the field input. Crimson marks the agent's decision.
-function Flow() {
-  const d = useDraw(), f = useFade()
-  const steps = ['DATA', 'AI / ML', 'AGENT', 'DASHBOARD']
-  return <>
-    <motion.path d="M70 180 C 70 120 120 96 150 96 C 150 150 118 184 70 180 Z" {...d(0)} />
-    <motion.path d="M70 180 C 92 150 116 126 146 100" {...d(1)} />
-    {[112, 128].map((x, i) => <motion.line key={x} x1={x} y1={140 - i * 14} x2={x + 10} y2={150 - i * 14} {...d(1.5 + i)} />)}
-    <motion.line x1="70" y1="180" x2="70" y2="236" {...d(2)} />
-    {steps.map((s, i) => {
-      const y = 70 + i * 64
-      return <g key={s}>
-        <motion.rect x="230" y={y} width="180" height="40" rx="2" {...d(3 + i * 2, i === 2)} />
-        <motion.text x="244" y={y + 25} {...f(i)}>{s}</motion.text>
-        {i < 3 && <motion.line x1="320" y1={y + 40} x2="320" y2={y + 64} {...d(4 + i * 2)} />}
-      </g>
-    })}
-    <motion.path d="M160 120 C 190 120 200 90 230 90" strokeDasharray="3 5" {...d(2.5)} />
-    <motion.text x="40" y="270" {...f(5)}>FIELD INPUT</motion.text>
-  </>
-}
-
-const PLATES = { dial: Dial, track: Track, arm: Arm, flow: Flow }
+const PLATES = { dial: Dial, track: Track, arm: Arm }
 
 function Photo({ image }) {
   // every photo fills the same frame (object-fit: cover); object-position only where the subject needs it

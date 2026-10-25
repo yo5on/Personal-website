@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { motion, useInView, useReducedMotion } from 'motion/react'
 import { email } from '../data/content.js'
-import { ArrowUp, ArrowUpRight, BrandMoth } from './Icons.jsx'
+import { ArrowUp, ArrowUpRight, BrandStar } from './Icons.jsx'
 import SocialLinks from './SocialLinks.jsx'
 import InkWord from './InkWord.jsx'
 
@@ -45,14 +45,14 @@ export function Contact() {
   )
 }
 
-export function Footer() {
+export function Footer({ page }) {
   return (
     <footer className="footer">
-      <a className="brand" href="#top"><BrandMoth /><span className="brand-word">YOSON</span></a>
+      <a className="brand" href="#top"><BrandStar /><img className="brand-word" src="images/brand-yo5on.png" alt="Yoson" width="163" height="58" /></a>
       <span>Think · Innovate · Fabricate</span>
       <SocialLinks className="footer-social" />
       <span className="colophon">Set in Instrument Serif, Instrument Sans &amp; IBM Plex Mono · 3D bust adapted from sen-3d-resume (MIT) · 2026</span>
-      <a className="back-top" href="#top">Back to top <ArrowUp /></a>
+      <a className="back-top" href={`#${page}`}>Back to top <ArrowUp /></a>
     </footer>
   )
 }

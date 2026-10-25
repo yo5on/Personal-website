@@ -1,44 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react'
-import { BrandMoth } from './Icons.jsx'
+import { BrandStar } from './Icons.jsx'
 import SocialLinks from './SocialLinks.jsx'
 
 const links = [['Work', '#work'], ['Maker', '#maker'], ['Credentials', '#credentials'], ['Contact', '#contact']]
-// Page sections in order, and the nav link each one makes current.
-const SECTIONS = [['top', null], ['work', '#work'], ['maker', '#maker'], ['credentials', '#credentials'], ['contact', '#contact']]
 const ease = [0.22, 1, 0.36, 1]
 // Everything outside the header and the menu sheet is taken out of reach while the sheet is open.
 const BACKGROUND = '.skip, main, footer, .nav .brand, .nav-links, .nav-aside'
 
-export default function Nav() {
+export default function Nav({ page }) {
   const reduced = useReducedMotion()
   const { scrollY } = useScroll()
   const [scrolled, setScrolled] = useState(false)
-  const [active, setActive] = useState(null) // nothing is current until a section is actually in view
+  const active = `#${page}`
   const [open, setOpen] = useState(false)
   const menuButton = useRef(null)
   const sheet = useRef(null)
-  // The current section is the last one whose top has risen above a line 30% down the viewport, so a
-  // section becomes current once it fills most of the screen, not when its top edge first appears.
-  // The hero clears the underline; the very bottom of the page is Contact, which is too short to reach the
-  // line on tall screens.
-  const updateActive = () => {
-    const line = window.innerHeight * 0.3
-    let current = null
-    for (const [id, href] of SECTIONS) {
-      const el = document.getElementById(id)
-      if (el && el.getBoundingClientRect().top <= line) current = href
-    }
-    if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) current = '#contact'
-    setActive(current)
-  }
-  useMotionValueEvent(scrollY, 'change', v => { setScrolled(v > 60); updateActive() })
-
-  useEffect(() => {
-    updateActive()
-    window.addEventListener('resize', updateActive)
-    return () => window.removeEventListener('resize', updateActive)
-  }, [])
+  useMotionValueEvent(scrollY, 'change', v => setScrolled(v > 60))
 
   useEffect(() => {
     if (!open) return
@@ -85,11 +63,12 @@ export default function Nav() {
   }, [open])
 
   return <>
-    <motion.header className={scrolled ? 'nav is-scrolled' : 'nav'} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2, delay: 0.1, ease }}>
-      <a className="brand" href="#top" aria-label="YOSON — back to top"><BrandMoth /><span className="brand-word">YOSON</span></a>
+    {/* Maker opens on a light sage sky, so its bar is solid from the top to keep the links legible */}
+    <motion.header className={scrolled || page === 'maker' ? 'nav is-scrolled' : 'nav'} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2, delay: 0.1, ease }}>
+      <a className="brand" href="#top" aria-label="YOSON — back to top"><BrandStar /><img className="brand-word" src="images/brand-yo5on.png" alt="Yoson" width="163" height="58" /></a>
       <nav className="nav-links" aria-label="Primary">
         {links.map(([label, href]) => (
-          <a key={href} href={href} aria-current={active === href ? 'location' : undefined}>
+          <a key={href} href={href} aria-current={active === href ? 'page' : undefined}>
             {label}
             {active === href && <motion.span className="nav-underline" layoutId="nav-underline" transition={{ type: 'spring', stiffness: 320, damping: 32 }} />}
           </a>
@@ -109,7 +88,7 @@ export default function Nav() {
         <motion.div ref={sheet} className="menu-sheet" role="dialog" aria-modal="true" aria-label="Site menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduced ? 0 : 0.5, ease }}>
           <nav aria-label="Mobile">
             {links.map(([label, href], i) => (
-              <motion.a key={href} href={href} onClick={() => setOpen(false)} initial={reduced ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.7, delay: reduced ? 0 : 0.1 + i * 0.07, ease }}>{label}</motion.a>
+              <motion.a key={href} href={href} aria-current={active === href ? 'page' : undefined} onClick={() => setOpen(false)} initial={reduced ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.7, delay: reduced ? 0 : 0.1 + i * 0.07, ease }}>{label}</motion.a>
             ))}
           </nav>
           <div className="menu-foot"><SocialLinks /></div>

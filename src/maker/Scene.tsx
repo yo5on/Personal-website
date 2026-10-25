@@ -12,23 +12,21 @@ import { nodeIndex } from './progress'
 import { addFaceDetails } from './faceDetails'
 import { addEyeTracking, type EyeRig } from './eyeTracking'
 
-// Ported from yo5on/Aboutme (src/scene/Scene.tsx). Changes for the Maker chapter: the camera follows progress
-// through this chapter's timeline instead of page scroll; the works entrance / pan stops and the turntable spin
-// are gone; the sky and lights are re-graded to the site palette; phones get a lighter model and no post/shadows.
+// Ported from yo5on/Aboutme (src/scene/Scene.tsx). Model, materials, lights, post and camera stops are the original's.
+// Changes for the Maker chapter: the camera reads the timeline cards' viewport positions (same result as the
+// original's page-scroll maths, as Maker is its own page); the works entrance / pan stops and the turntable spin
+// are gone (the works live on their own page).
 
 // me.glb is Draco-compressed. The decoder is three's own, emitted by Vite (self-hosted, no third-party CDN);
 // explicit URLs because DRACOLoader's import.meta.url defaults break under dev pre-bundling.
-// Phones get me-phone.glb: 2048² texture, about half the triangles.
-export const modelUrl = (phone: boolean) => `${import.meta.env.BASE_URL}maker/${phone ? 'me-phone.glb' : 'me.glb'}`
+export const modelUrl = `${import.meta.env.BASE_URL}maker/me.glb`
 const withDraco = (loader: GLTFLoader) => {
   loader.setDRACOLoader(new DRACOLoader().setDecoderPath({ js: dracoJs, wasm: dracoWasm }))
 }
 
 const M = FOCUS_POINTS.length // timeline node count
 const RESUME_FRAMES = M * FRAMES_PER_NODE // node k sits at frame (k+1)·50; the opening stop at frame 0
-// a node locks when its card top reaches this line (share of the viewport from the top): on phones the card
-// comes to rest below the bust, which fills the top of the screen
-const NODE_LINE = { desktop: 0.3, phone: 0.6 }
+const NODE_LINE = 0.3 // a node locks when its card top reaches 30% from the viewport top
 const FOV = 22.9 // narrow lens, same as the reference glb camera
 
 // me.glb (Tripo export) is a 0.98-unit bust facing +X with its pivot at the bbox centre.
@@ -46,7 +44,7 @@ const MODEL = {
 // fraction of the focus distance (sx > 0 pushes the subject left of the right-hand timeline, sy < 0 raises it).
 type Stop = { c: [number, number, number]; f: [number, number, number]; sx: number; sy?: number }
 const STOPS: Stop[] = [
-  { c: [0, 1.5, 7.2], f: [0, 1.5, 0.05], sx: 0.12, sy: -0.058 }, // opening: level, eyes ~37% from the top, left of the intro
+  { c: [0, 1.5, 7.2], f: [0, 1.5, 0.05], sx: 0, sy: -0.058 }, // opening: level and centred, eyes ~37% from the top
   { c: [2.2, 0.75, 1.9], f: [0.33, 1.38, 0.02], sx: 0.2 }, // education: low three-quarter, cheek
   { c: [1.28, 1.25, 1.57], f: [0.29, 1.16, -0.05], sx: 0.16 }, // think: square on the cheek kiss
   { c: [-1.6, 1.75, 1.7], f: [-0.25, 1.5, 0.03], sx: 0.2 }, // innovate: swing to the other side, eye level
@@ -57,17 +55,29 @@ if (STOPS.length !== M + 1) throw new Error('Scene: STOPS needs the opening stop
 
 const EYE_MID = new THREE.Vector3(0.17, 0.15, 0) // me.glb model space, between the painted eyes
 
-// Gradient sky sphere wrapped around the camera: graphite above, near-black below, so the bust sits in the moth's world.
-// Matches --stage-top/--stage-bottom in styles.css (navy palette: #2a2e6b / #0d0f2a)
+// Gradient sky sphere wrapped around the camera (Aboutme's), in the navy site's original sky (#2a2e6b → #0d0f2a).
+// Reads --stage-top/--stage-bottom from styles.css, and follows the 3D background trial (data-stage on <html>).
 function GradientBackground() {
   const uniforms = useMemo(
     () => ({
-      uTop: { value: new THREE.Color('#2b2b2b') },
-      uBottom: { value: new THREE.Color('#0c0c0c') },
+      uTop: { value: new THREE.Color('#2a2e6b') },
+      uBottom: { value: new THREE.Color('#0d0f2a') },
       uSteep: { value: 1.4 }, // the narrow lens only sees the middle band; steep stretches the transition into view
     }),
     []
   )
+  useEffect(() => {
+    const root = document.documentElement
+    const sync = () => {
+      const css = getComputedStyle(root)
+      uniforms.uTop.value.set(css.getPropertyValue('--stage-top').trim() || '#2a2e6b')
+      uniforms.uBottom.value.set(css.getPropertyValue('--stage-bottom').trim() || '#0d0f2a')
+    }
+    sync()
+    const watch = new MutationObserver(sync)
+    watch.observe(root, { attributes: true, attributeFilter: ['data-stage'] })
+    return () => watch.disconnect()
+  }, [uniforms])
   return (
     <mesh scale={100}>
       <sphereGeometry args={[1, 32, 32]} />
@@ -117,17 +127,17 @@ function Env({ intensity }: { intensity: number }) {
   return null
 }
 
-// Environment + navy hemisphere + warm stone key (front right) + crimson rim (behind left)
-function Lights({ shadows }: { shadows: boolean }) {
+// The original's lights: environment + hemisphere + warm key (front right) / cool fill (behind left)
+function Lights() {
   return (
     <>
-      <Env intensity={0.7} />
-      <hemisphereLight args={['#d9d5c6', '#1b1e4a', 0.95]} />
+      <Env intensity={0.85} />
+      <hemisphereLight args={['#ffffff', '#404040', 1.15]} />
       <directionalLight
         position={[5, 8, 5]}
-        intensity={2.5}
-        color="#f1e6d0"
-        castShadow={shadows}
+        intensity={2.35}
+        color="#ffd9c6"
+        castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0004}
         shadow-normalBias={0.02}
@@ -136,7 +146,7 @@ function Lights({ shadows }: { shadows: boolean }) {
         shadow-camera-top={3}
         shadow-camera-bottom={-3}
       />
-      <directionalLight position={[-5, 3, -4]} intensity={3.2} color="#d21319" />
+      <directionalLight position={[-5, 4, -4]} intensity={2.25} color="#9fc6ff" />
     </>
   )
 }
@@ -146,13 +156,11 @@ function Man({
   focusRef,
   frameRef,
   phone,
-  shadows,
   onReady,
 }: {
   focusRef: MutableRefObject<THREE.Vector3>
   frameRef: MutableRefObject<number>
   phone: boolean
-  shadows: boolean
   onReady: () => void
 }) {
   const cam = {
@@ -162,6 +170,8 @@ function Man({
     parallaxEase: 0.1,
     mobilePullback: 1.2, // on phones, pull the camera back along focus→camera (1.2 = 20% further)
     mobileTimelinePullback: 1.6, // extra pull-back for the close-ups on portrait screens
+    portraitPullback: 1, // opening on portrait screens: up to 2× further back (then grounded, see step 5)
+    portraitDrop: 0.06, // ...and the eyes lowered by up to this truck (sy units), from ~36% to ~50% of the height
   }
 
   // Eyes follow the cursor / touch point. maxYaw / maxPitch: gaze angle (deg) for full iris travel.
@@ -171,15 +181,15 @@ function Man({
   const gaze = useRef({ x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, still: 0, next: 3, ix: 0, iy: 0 })
 
   const get = useThree((s) => s.get)
-  const { scene } = useLoader(GLTFLoader, modelUrl(phone), withDraco)
+  const { scene } = useLoader(GLTFLoader, modelUrl, withDraco)
   const eyes = useRef<EyeRig | null>(null)
 
   const model = useMemo(() => {
     const meshes: any[] = []
     scene.traverse((o: any) => {
       if (o.isMesh) {
-        o.castShadow = shadows
-        o.receiveShadow = shadows
+        o.castShadow = true
+        o.receiveShadow = true
         meshes.push(o)
       }
     })
@@ -187,7 +197,7 @@ function Man({
     if (meshes[0] && !scene.getObjectByName('nose-bandage')) addFaceDetails(meshes[0])
     if (meshes[0]) eyes.current = meshes[0].userData.eyes ??= addEyeTracking(meshes[0], get().gl)
     return scene
-  }, [scene, get, shadows])
+  }, [scene, get])
 
   // The bust's lowest point: me.glb is cut off at the chest, so its bbox min.y is a flat rim of
   // vertices. Sample that rim (mesh-local) so the camera can keep it at the viewport's bottom edge.
@@ -302,7 +312,7 @@ function Man({
       sTarget = nodeIndex(
         sectionEl.current.getBoundingClientRect().top,
         els.map((el) => el!.getBoundingClientRect().top),
-        window.innerHeight * (phone ? NODE_LINE.phone : NODE_LINE.desktop),
+        window.innerHeight * NODE_LINE,
         cam.dwell
       )
     }
@@ -336,6 +346,11 @@ function Man({
     tmpVec.current.copy(camPos.current).sub(focusRef.current).applyQuaternion(paraQuat.current)
     // timeline weight: fades in from the opening (s: -0.8→0.3) → no jumps
     const tlWeight = THREE.MathUtils.smoothstep(s, -0.8, 0.3)
+    // Opening on portrait screens: the fixed vertical FOV crops the bust at the sides, so pull back and lower the
+    // eyes; the grounding in 5) then dollies back in until the cut edge meets the bottom, keeping the bust centred
+    // at the foot of the screen with the whole head in frame. 0 at aspect ≥ 1, full at ≤ 0.5.
+    const portrait = THREE.MathUtils.clamp((1 - camera.aspect) / 0.5, 0, 1) * (1 - tlWeight)
+    tmpVec.current.multiplyScalar(1 + cam.portraitPullback * portrait)
     if (phone) {
       tmpVec.current.multiplyScalar(cam.mobilePullback * THREE.MathUtils.lerp(1, cam.mobileTimelinePullback, tlWeight))
     }
@@ -347,7 +362,7 @@ function Man({
     // scroll over the bust, so it stays centred
     const dist = camera.position.distanceTo(focusRef.current)
     if (!phone) camera.translateX(dist * sx)
-    camera.translateY(dist * sy)
+    camera.translateY(dist * (sy + cam.portraitDrop * portrait))
     if (camera.fov !== FOV) {
       camera.fov = FOV
       camera.updateProjectionMatrix()
@@ -459,7 +474,7 @@ function Man({
   )
 }
 
-// Post: DepthOfField → Bloom → SMAA (desktop only).
+// Post: DepthOfField → Bloom → SMAA.
 // DoF target follows focusRef every frame; mid-timeline tightens the focus range and boosts bokeh.
 function Post({
   focusRef,
@@ -469,7 +484,7 @@ function Post({
   frameRef: MutableRefObject<number>
 }) {
   const post = {
-    bloomIntensity: 0.5,
+    bloomIntensity: 0.6,
     bloomThreshold: 0.82,
     startBokeh: 7.4,
     startRange: 2.0,
@@ -520,10 +535,10 @@ export default function Scene({ phone, onReady }: { phone: boolean; onReady: () 
     <>
       <GradientBackground />
       <Suspense fallback={null}>
-        <Lights shadows={!phone} />
-        <Man focusRef={focusRef} frameRef={frameRef} phone={phone} shadows={!phone} onReady={onReady} />
+        <Lights />
+        <Man focusRef={focusRef} frameRef={frameRef} phone={phone} onReady={onReady} />
       </Suspense>
-      {!phone && <Post focusRef={focusRef} frameRef={frameRef} />}
+      <Post focusRef={focusRef} frameRef={frameRef} />
     </>
   )
 }
