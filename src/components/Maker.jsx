@@ -66,7 +66,7 @@ function Node({ node, index, onOpen }) {
   )
 }
 
-export default function Maker({ onOpen }) {
+export default function Maker({ onOpen, caseOpen }) {
   const reduced = useReducedMotion()
   const section = useRef(null)
   const [webgl] = useState(hasWebGL)
@@ -75,6 +75,7 @@ export default function Maker({ onOpen }) {
   const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
   const [slow, setSlow] = useState(false) // still loading after LOADER_DELAY: show the starburst
+  const [covered, setCovered] = useState(false) // a study view fully covers the stage: pause the 3D and grain
   const phone = useMemo(isPhone, [near]) // decided when the 3D mounts, not at page load
   const enabled = webgl && !failed
 
@@ -115,6 +116,14 @@ export default function Maker({ onOpen }) {
     return () => { nearIO.disconnect(); seenIO.disconnect() }
   }, [])
 
+  // Pause only once the study's 0.26 s fade-in has covered the stage, so nothing visibly freezes under it;
+  // resume as soon as it starts closing, so the scene is live again when its fade-out reveals it.
+  useEffect(() => {
+    if (!caseOpen) { setCovered(false); return }
+    const id = setTimeout(() => setCovered(true), 300)
+    return () => clearTimeout(id)
+  }, [caseOpen])
+
   // Fetch the JS chunk (not the model) once the page is idle, so the chapter is quick to start.
   useEffect(() => {
     if (!enabled || !window.requestIdleCallback) return
@@ -149,7 +158,7 @@ export default function Maker({ onOpen }) {
         {enabled && near && (
           <Boundary onError={onError}>
             <Suspense fallback={null}>
-              <MakerCanvas phone={phone} active={visible} onReady={onReady} />
+              <MakerCanvas phone={phone} active={visible && !covered} onReady={onReady} />
             </Suspense>
           </Boundary>
         )}

@@ -88,7 +88,7 @@ function App() {
         {/* Origin is the landing page: the hero alone; the projects are their own page */}
         {page === 'origin' && <Hero />}
         {page === 'work' && <Work onOpen={open} />}
-        {page === 'maker' && <Maker onOpen={open} />}
+        {page === 'maker' && <Maker onOpen={open} caseOpen={!!active} />}
         {page === 'credentials' && <Certificates onOpen={open} />}
         {page === 'contact' && <Contact />}
       </motion.main>
