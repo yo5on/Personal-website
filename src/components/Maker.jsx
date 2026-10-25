@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { maker, projects } from '../data/content.js'
 import { FOCUS_POINTS } from '../maker/focusPoints'
@@ -27,8 +27,9 @@ const hasWebGL = () => {
     return !!gl
   } catch { return false }
 }
-// Phones (touch or ≤640px, Aboutme's breakpoint): the same scene, pulled back for full-width cards (see Scene.tsx).
-const isPhone = () => window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 640
+// Phones (≤640px, Aboutme's breakpoint): the same scene, pulled back for full-width cards (see Scene.tsx). The same
+// query as the CSS, so a landscape phone or tablet gets the desktop column layout and the desktop framing together.
+const PHONE = '(max-width: 640px)'
 
 // Catches a failed chunk, WebGL context or model load; the starburst stops turning and the chapter still reads.
 class Boundary extends Component {
@@ -76,7 +77,7 @@ export default function Maker({ onOpen, caseOpen }) {
   const [failed, setFailed] = useState(false)
   const [slow, setSlow] = useState(false) // still loading after LOADER_DELAY: show the starburst
   const [covered, setCovered] = useState(false) // a study view fully covers the stage: pause the 3D and grain
-  const phone = useMemo(isPhone, [near]) // decided when the 3D mounts, not at page load
+  const [phone, setPhone] = useState(() => window.matchMedia(PHONE).matches)
   const enabled = webgl && !failed
 
   // Aboutme's scroll transitions (App.tsx), same offsets: the intro blurs, fades and drifts up (title faster,
@@ -107,6 +108,14 @@ export default function Maker({ onOpen, caseOpen }) {
   // bottom (the torso) never trails into the footer.
   const { scrollYProgress: endProgress } = useScroll({ target: section, offset: ['end end', 'end 0.6'] })
   const stageOpacity = useTransform(endProgress, [0, 1], [1, 0])
+
+  // follows rotation and resizing, so the framing never disagrees with the card layout
+  useEffect(() => {
+    const mq = window.matchMedia(PHONE)
+    const onChange = () => setPhone(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
 
   useEffect(() => {
     const el = section.current

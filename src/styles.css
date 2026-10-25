@@ -635,7 +635,9 @@ main { min-height: calc(100svh - 90px); } /* short pages (Contact) keep the foot
 /* ------------------------------------------------------------------ */
 .maker { position: relative; overflow-x: clip; background: var(--navy); }
 /* the stage is Aboutme's fixed scene layer: its sky gradient shows while the canvas loads and fades in (0.5s) */
-.maker-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; background: linear-gradient(to top, var(--stage-bottom), var(--stage-top)); }
+/* lvh, not svh: when a phone's toolbar retracts the stage still fills the screen (no band under the bust), and the
+   canvas keeps one size instead of resizing as the toolbar shows and hides */
+.maker-stage { position: sticky; top: 0; height: 100lvh; overflow: hidden; background: linear-gradient(to top, var(--stage-bottom), var(--stage-top)); }
 .maker-canvas { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
 /* the loader: the brand starburst over the bust's face, turning slowly while the scene loads. It fades in, then stops
    where it is and fades out as the canvas fades in. */
@@ -666,7 +668,7 @@ main { min-height: calc(100svh - 90px); } /* short pages (Contact) keep the foot
 @media (prefers-reduced-transparency: reduce) { .maker-rail { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(13, 15, 42, 0.6); } }
 
 /* the flow scrolls over the stage: pulled up by one stage height; only its cards take pointer input */
-.maker-flow { position: relative; z-index: 2; margin-top: -100svh; pointer-events: none; }
+.maker-flow { position: relative; z-index: 2; margin-top: -100lvh; pointer-events: none; }
 .maker-flow a, .maker-flow button, .maker-card { pointer-events: auto; }
 /* Aboutme's opening: copy centred over the bust's jaw, the Scroll cue under it. Exactly one screen, never taller,
    so the first screen has nothing more to scroll into: the copy stacks up from the bottom edge whatever its length.
@@ -703,10 +705,14 @@ html:has(.maker) { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
 .maker-points li::before { content: ''; position: absolute; left: 0; top: 0.8em; width: 10px; height: 1px; background: var(--crimson); }
 .maker-work { display: flex; flex-wrap: wrap; margin-top: 18px; font: 400 var(--fs-label)/1.6 var(--ui); letter-spacing: var(--ls-label); text-transform: uppercase; }
 .maker-work a { color: var(--stone); padding: 6px 0; text-decoration: underline 1px var(--crimson); text-underline-offset: 5px; }
-.maker-work a:hover, .maker-work a:focus-visible { color: var(--crimson-text); }
+.maker-work a:focus-visible { color: var(--crimson-text); }
 .maker-contact { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; margin-top: 22px; font: 500 var(--fs-label)/1.6 var(--ui); letter-spacing: var(--ls-label); text-transform: uppercase; }
 .maker-contact > a { color: var(--stone); padding: 6px 0; }
-.maker-contact > a:hover, .maker-contact > a:focus-visible { color: var(--crimson-text); }
+.maker-contact > a:focus-visible { color: var(--crimson-text); }
+/* hover only where it is real, so a tapped study link doesn't stay crimson after its view closes */
+@media (hover: hover) { .maker-work a:hover, .maker-contact > a:hover { color: var(--crimson-text); } }
+/* touch: taller hit areas, the negative margin keeping the layout exactly as drawn */
+@media (pointer: coarse) { .maker-work a, .maker-contact > a { padding: 12px 0; margin: -6px 0; } }
 
 /* status: a column spanning the chapter whose contents stick to the bottom-left of the screen */
 .maker-controls { position: absolute; z-index: 3; left: var(--gutter); top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 24px; pointer-events: none; }
