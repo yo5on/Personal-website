@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useRef, useEffect, type MutableRefObject } from 'react'
+import { Suspense, useMemo, useRef, useEffect, useLayoutEffect, useState, type MutableRefObject } from 'react'
 import { useThree, useFrame, useLoader } from '@react-three/fiber'
 import { EffectComposer, Bloom, DepthOfField, SMAA } from '@react-three/postprocessing'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -55,6 +55,8 @@ const STOPS: Stop[] = [
 ]
 if (STOPS.length !== M + 1) throw new Error('Scene: STOPS needs the opening stop plus one stop per FOCUS_POINTS entry')
 
+const EYE_WAIT = 1500 // ms the reveal may wait for the eye analysis once the shaders are ready
+
 const EYE_MID = new THREE.Vector3(0.17, 0.15, 0) // me.glb model space, between the painted eyes
 
 // Gradient sky sphere wrapped around the camera (Aboutme's), in the navy site's original sky (#2a2e6b → #0d0f2a).
@@ -109,11 +111,13 @@ function GradientBackground() {
   )
 }
 
-// Image-based light from three's procedural RoomEnvironment (no HDR asset to ship)
+// Image-based light from three's procedural RoomEnvironment (no HDR asset to ship). A layout effect, so the
+// environment is set before R3F's first frame: set later, the face material compiled once without it and then
+// again with it (~1 s of blocking shader compile on a cold cache)
 function Env({ intensity }: { intensity: number }) {
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
-  useEffect(() => {
+  useLayoutEffect(() => {
     const pmrem = new THREE.PMREMGenerator(gl)
     const room = new RoomEnvironment()
     const tex = pmrem.fromScene(room, 0.04).texture
@@ -226,8 +230,31 @@ function Man({
     return { mesh, local, world: local.map(() => new THREE.Vector3()), center: new THREE.Vector3() }
   }, [model])
 
-  // Model parsed, decals built, and mounted → the poster can go
-  useEffect(() => { onReady() }, [onReady])
+  // Model parsed, decals built and mounted: compile the scene's programs without blocking (KHR_parallel_shader_compile)
+  // while it stays hidden, so the post passes compile in the same frames instead of after it; then show it → the
+  // poster can go. Drawn straight away, the face shader's compile blocked the page for ~1 s on a cold cache.
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    let live = true
+    const { gl, scene: root, camera } = get()
+    // the post composer draws the scene into a (linear) render target, not the canvas: compile for that, or the
+    // program would not match and the face would compile a second time on first draw
+    const target = new THREE.WebGLRenderTarget(1, 1)
+    const prev = gl.getRenderTarget()
+    gl.setRenderTarget(target)
+    const compiled = gl.compileAsync(root, camera) // programs are created synchronously; only readiness is polled
+    gl.setRenderTarget(prev)
+    target.dispose()
+    // ...and the eye analysis, so the painted catchlights don't vanish just after the reveal; capped, as on a slow
+    // machine it can take several seconds longer (the layers then fade in on the live bust)
+    const eyesIn = eyes.current?.ready ?? Promise.resolve()
+    compiled.catch(() => {}).then(() => Promise.race([eyesIn, new Promise((r) => setTimeout(r, EYE_WAIT))])).then(() => {
+      if (!live) return
+      setShown(true)
+      onReady()
+    })
+    return () => { live = false }
+  }, [get, onReady])
 
   const path = useMemo(
     () => ({
@@ -470,7 +497,7 @@ function Man({
   })
 
   return (
-    <group position={MODEL.position} rotation={[0, MODEL.rotationY, 0]} scale={MODEL.scale}>
+    <group position={MODEL.position} rotation={[0, MODEL.rotationY, 0]} scale={MODEL.scale} visible={shown}>
       <primitive object={model} />
     </group>
   )

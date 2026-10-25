@@ -1,4 +1,4 @@
-import { Suspense, useRef } from 'react'
+import { Suspense, useCallback, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import Scene from './Scene'
@@ -39,6 +39,10 @@ export default function MakerCanvas({
 }) {
   // The original's settings on every device (phones included); only the framing in Scene differs on phones
   const maxDpr = Math.min(Math.max(window.devicePixelRatio, 1), 1.5)
+  // The grain is a second WebGL context with its own shader: started once the scene is up, so it never competes
+  // with the model's load and shader compiles
+  const [live, setLive] = useState(false)
+  const ready = useCallback(() => { setLive(true); onReady() }, [onReady])
   return (
     <>
       <Canvas
@@ -58,10 +62,10 @@ export default function MakerCanvas({
         <color attach="background" args={['#0a0e16']} />
         <AdaptiveDpr max={maxDpr} />
         <Suspense fallback={null}>
-          <Scene phone={phone} onReady={onReady} />
+          <Scene phone={phone} onReady={ready} />
         </Suspense>
       </Canvas>
-      {active && <NoiseOverlay />}
+      {active && live && <NoiseOverlay />}
     </>
   )
 }

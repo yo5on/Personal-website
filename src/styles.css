@@ -637,7 +637,7 @@ main { min-height: calc(100svh - 90px); } /* short pages (Contact) keep the foot
 /* the stage is Aboutme's fixed scene layer: its sky gradient shows while the canvas loads and fades in (0.9s) */
 .maker-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; background: linear-gradient(to top, var(--stage-bottom), var(--stage-top)); }
 .maker-poster, .maker-canvas { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
-.maker-poster { object-fit: cover; object-position: 38% 30%; }
+.maker-poster { object-fit: cover; }
 .maker-canvas { opacity: 0; transition: opacity 0.9s ease; }
 .maker-stage.is-live .maker-canvas { opacity: 1; }
 /* Aboutme's scrim: darkens only the right (timeline) side as the page scrolls (opacity 0 → 0.4, Maker.jsx) */
@@ -716,7 +716,6 @@ html:has(.maker) { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
 }
 /* phones, at Aboutme's breakpoint: the same full-screen scene; cards are full width on a translucent ground */
 @media (max-width: 640px) {
-  .maker-poster { object-position: 32% 30%; }
   .maker-rail { display: none; } /* as in the original: cards are full width on phones */
   .maker-nodes { padding-top: 22svh; }
   .maker-node { width: auto; margin: 0; }

@@ -21,10 +21,13 @@ const FRONT_X = 0.1 // eye surface sits at x ≈ 0.14–0.19; ignore anything fu
 const TUCK = 0.25 // how far (iris radii) the iris may slide under a lid at full gaze
 const MAX_TRAVEL = 0.9 // iris travel cap (iris radii)
 const SPRITE = 1.15 // the sliding disc, in iris radii: the iris plus its soft dark halo
+const FADE = 600 // ms for the eye layers to fade in over the painted eyes
 
 export interface EyeRig {
   // absolute gaze in [-1, 1] (not accumulated): +x = toward the viewer's right (the eye's -Z side), +y = up
   setGaze(x: number, y: number): void
+  // settles once the eye layers are in (or the analysis gave up and the painted eyes stay)
+  ready: Promise<void>
 }
 
 export function addEyeTracking(mesh: THREE.Mesh, gl: THREE.WebGLRenderer): EyeRig | null {
@@ -48,7 +51,7 @@ export function addEyeTracking(mesh: THREE.Mesh, gl: THREE.WebGLRenderer): EyeRi
   const prevClear = gl.getClearColor(new THREE.Color())
   const prevAlpha = gl.getClearAlpha()
 
-  const eyes = EYES.map((e) => {
+  const captures = EYES.map((e) => {
     cam.position.set(0.6, e.y, e.z)
     cam.lookAt(0, e.y, e.z) // screen right = model -Z
     gl.setRenderTarget(rt)
@@ -59,40 +62,33 @@ export function addEyeTracking(mesh: THREE.Mesh, gl: THREE.WebGLRenderer): EyeRi
     gl.render(scene, cam)
     const px = new Uint8Array(S * S * 4)
     gl.readRenderTargetPixels(rt, 0, 0, S, S, px) // row 0 = bottom, same as the DataTexture below
-    const found = analyse(px)
-    if (!found) return null
-    const toTex = (data: Uint8Array) => {
-      const t = new THREE.DataTexture(data, S, S)
-      t.colorSpace = THREE.SRGBColorSpace
-      t.magFilter = t.minFilter = THREE.LinearFilter
-      t.needsUpdate = true
-      return t
-    }
-    // clean = the iris layer (the eye without the catchlight), bg = the opening with the iris painted out;
-    // both carry the opening mask in alpha
-    const clean = toTex(removeCatchlight(px, found.iris))
-    const bg = toTex(removeIris(px, found.iris))
-    return { box: new THREE.Vector4(e.z, e.y, 1 / (2 * R), FRONT_X), ...found, clean, bg, off: new THREE.Vector2() }
+    return px
   })
   gl.setRenderTarget(prevTarget)
   gl.setClearColor(prevClear, prevAlpha)
   rt.dispose()
   flat.dispose()
-  if (eyes.some((e) => !e)) {
-    console.warn('[eyeTracking] could not find the painted irises; eyes stay static')
-    return null
-  }
-  const [L, Rt] = eyes as NonNullable<(typeof eyes)[number]>[]
-  // Both eyes turn together, so each direction gets the travel the tighter eye allows (e.g. looking to the
-  // viewer's right is limited by the left eye's nasal corner and the right eye's outer corner)
-  const reach = L.reach.map((v, i) => Math.min(v, Rt.reach[i]))
 
-  // 2) Cloned face material with the eye layers spliced in after the base colour lookup
+  // 2) Cloned face material with the eye layers spliced in after the base colour lookup. Until the analysis (3) is
+  //    back, both layers are a clear 1×1 placeholder (opening weight 0 → the painted eyes show unchanged): the
+  //    program compiles once, now, and the real layers only swap uniform values.
+  const blank = toTex(new Uint8Array(4), 1)
+  const [L, Rt] = EYES.map((e) => ({
+    clean: { value: blank }, // the iris layer (the eye without the catchlight), opening mask in alpha
+    bg: { value: blank }, // the opening with the iris painted out, same alpha
+    box: { value: new THREE.Vector4(e.z, e.y, 1 / (2 * R), FRONT_X) },
+    iris: { value: new THREE.Vector3() },
+    off: { value: new THREE.Vector2() },
+  }))
+  // the layers fade in over FADE ms once they arrive, so a late analysis never pops the catchlights out
+  const fade = { value: 0 }
+  let fadeFrom = 0
+  let reach: number[] | null = null
   const mat = src.clone()
   mat.onBeforeCompile = (s) => {
     Object.assign(s.uniforms, {
-      uEyeClean0: { value: L.clean }, uEyeBg0: { value: L.bg }, uEyeBox0: { value: L.box }, uIris0: { value: L.iris }, uOff0: { value: L.off },
-      uEyeClean1: { value: Rt.clean }, uEyeBg1: { value: Rt.bg }, uEyeBox1: { value: Rt.box }, uIris1: { value: Rt.iris }, uOff1: { value: Rt.off },
+      uEyeClean0: L.clean, uEyeBg0: L.bg, uEyeBox0: L.box, uIris0: L.iris, uOff0: L.off,
+      uEyeClean1: Rt.clean, uEyeBg1: Rt.bg, uEyeBox1: Rt.box, uIris1: Rt.iris, uOff1: Rt.off, uEyeFade: fade,
     })
     s.vertexShader = s.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vEyePos;')
@@ -104,10 +100,11 @@ uniform sampler2D uEyeClean0, uEyeClean1, uEyeBg0, uEyeBg1;
 uniform vec4 uEyeBox0, uEyeBox1; // capture centre z, y, 1 / capture size, min x
 uniform vec3 uIris0, uIris1; // iris centre uv, radius
 uniform vec2 uOff0, uOff1; // iris shift (uv)
+uniform float uEyeFade; // 0 → the painted eyes, 1 → the layers
 vec3 eyeLook(sampler2D clean, sampler2D bg, vec4 box, vec3 iris, vec2 off, vec3 base) {
   vec2 uv = vec2(box.x - vEyePos.z, vEyePos.y - box.y) * box.z + 0.5;
   if (vEyePos.x < box.w || uv != clamp(uv, 0.0, 1.0)) return base;
-  float open = texture2D(clean, uv).a; // 0 on the lids, 1 inside the opening (a few capture pixels of feather)
+  float open = texture2D(clean, uv).a * uEyeFade; // 0 on the lids, 1 inside the opening (a few capture pixels of feather)
   if (open <= 0.0) return base;
   // the iris disc, read from where it was painted; only what was inside the opening there, so no lid comes along
   vec2 src = uv - off;
@@ -124,15 +121,69 @@ diffuseColor.rgb = eyeLook(uEyeClean1, uEyeBg1, uEyeBox1, uIris1, uOff1, diffuse
   mat.customProgramCacheKey = () => 'me-eyes'
   mesh.material = mat
 
+  // 3) The image analysis takes ~1–3 s per eye on a laptop, so each eye runs in its own worker and the bust shows
+  //    (painted eyes, still) without waiting; the eyes start following once both are back. Scene holds the reveal
+  //    for this (up to a cap), so normally the bust appears with its final eyes
+  const ready = Promise.all(captures.map(analyseOffThread)).then((found) => {
+    if (found.some((f) => !f)) return console.warn('[eyeTracking] could not find the painted irises; eyes stay static')
+    const [l, r] = found as EyeLayers[]
+    for (const [e, f] of [[L, l], [Rt, r]] as const) {
+      e.clean.value = toTex(f.clean, S)
+      e.bg.value = toTex(f.bg, S)
+      e.iris.value.fromArray(f.iris)
+    }
+    blank.dispose()
+    fadeFrom = performance.now()
+    performance.mark('maker-eyes-live')
+    // Both eyes turn together, so each direction gets the travel the tighter eye allows (e.g. looking to the
+    // viewer's right is limited by the left eye's nasal corner and the right eye's outer corner)
+    reach = l.reach.map((v, i) => Math.min(v, r.reach[i]))
+  })
+
   return {
+    ready,
     setGaze(x, y) {
+      if (!reach) return
+      fade.value = Math.min(1, (performance.now() - fadeFrom) / FADE)
       // travel limit for this direction, interpolated between the 8 measured ones
       const a = (Math.atan2(y, x) / (Math.PI / 4) + 8) % 8
       const i = Math.floor(a), f = a - i
       const lim = reach[i] * (1 - f) + reach[(i + 1) % 8] * f
-      for (const e of [L, Rt]) e.off.set(x * lim * e.iris.z, y * lim * e.iris.z)
+      for (const e of [L, Rt]) e.off.value.set(x * lim * e.iris.value.z, y * lim * e.iris.value.z)
     },
   }
+}
+
+function toTex(data: Uint8Array, size: number) {
+  const t = new THREE.DataTexture(data, size, size)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.magFilter = t.minFilter = THREE.LinearFilter
+  t.needsUpdate = true
+  return t
+}
+
+// One eye capture → its layers and iris, as plain data so it can run in eyeWorker.ts
+export function analyseEye(px: Uint8Array) {
+  const found = analyse(px)
+  if (!found) return null
+  return { iris: found.iris.toArray(), reach: found.reach, clean: removeCatchlight(px, found.iris), bg: removeIris(px, found.iris) }
+}
+type EyeLayers = NonNullable<ReturnType<typeof analyseEye>>
+
+// In a worker; on the main thread instead if the worker can't start or fails (px is copied, not transferred, for that)
+function analyseOffThread(px: Uint8Array): Promise<EyeLayers | null> {
+  return new Promise((resolve) => {
+    const inline = () => resolve(analyseEye(px))
+    let w: Worker
+    try {
+      w = new Worker(new URL('./eyeWorker.ts', import.meta.url), { type: 'module' })
+    } catch {
+      return inline()
+    }
+    w.onmessage = (e) => { w.terminate(); resolve(e.data) }
+    w.onerror = () => { w.terminate(); inline() }
+    w.postMessage(px)
+  })
 }
 
 // From one capture: eye opening (written to px's alpha), iris circle (uv centre, uv radius) and how far the
@@ -250,11 +301,13 @@ export function removeCatchlight(px: Uint8Array, iris: THREE.Vector3, S = Math.r
   for (let i = 0; i < S * S; i++) if (mask[i]) hole.push(i)
   const filled = hole.slice()
   // onion-peel fill: each pass sets the hole pixels that touch known ones to their known neighbours' average
+  const around = [-1, 1, -S, S, -S - 1, -S + 1, S - 1, S + 1]
   while (hole.length) {
     const next: number[] = [], done: [number, number, number, number][] = []
     for (const i of hole) {
       let r = 0, g = 0, b = 0, n = 0
-      for (const j of [i - 1, i + 1, i - S, i + S, i - S - 1, i - S + 1, i + S - 1, i + S + 1]) {
+      for (let d = 0; d < 8; d++) {
+        const j = i + around[d]
         if (j < 0 || j >= S * S || mask[j]) continue
         r += out[4 * j]; g += out[4 * j + 1]; b += out[4 * j + 2]; n++
       }
@@ -316,11 +369,21 @@ export function removeIris(px: Uint8Array, iris: THREE.Vector3, S = Math.round(M
   }
   // relax: smooths the creases where the nearest pixel switches; the lids and their feathered edge hold no value
   const holds = (j: number) => j >= 0 && j < S * S && (hole[j] === 1 || px[4 * j + 3] === 255)
+  // which of the 4 neighbours (left, right, below, above) hold, as bits; fixed while relaxing, so it is found once
+  // (this loop runs ~15M times per eye: no allocation or call inside it)
+  const held = Uint8Array.from(filled, (i) => (+holds(i - 1)) | (+holds(i + 1) << 1) | (+holds(i - S) << 2) | (+holds(i + S) << 3))
   for (let k = 0; k < 120; k++)
-    for (const i of filled) for (let c = 0; c < 3; c++) {
-      let sum = 0, n = 0
-      for (const j of [i - 1, i + 1, i - S, i + S]) if (holds(j)) { sum += f[3 * j + c]; n++ }
-      if (n) f[3 * i + c] = sum / n
+    for (let p = 0; p < filled.length; p++) {
+      const i = filled[p], m = held[p]
+      if (!m) continue
+      for (let c = 0; c < 3; c++) {
+        let sum = 0, n = 0
+        if (m & 1) { sum += f[3 * (i - 1) + c]; n++ }
+        if (m & 2) { sum += f[3 * (i + 1) + c]; n++ }
+        if (m & 4) { sum += f[3 * (i - S) + c]; n++ }
+        if (m & 8) { sum += f[3 * (i + S) + c]; n++ }
+        f[3 * i + c] = sum / n
+      }
     }
   for (const i of filled) for (let c = 0; c < 3; c++) out[4 * i + c] = Math.round(f[3 * i + c])
   return out

@@ -125,7 +125,8 @@ export default function Maker({ onOpen }) {
   }, [enabled])
 
   const toggle = () => { const v = !on; setOn(v); writePref(v ? 'on' : 'off'); if (!v) setReady(false) }
-  const onReady = useCallback(() => setReady(true), [])
+  // 'maker-3d-visible' marks the first frame drawn after mount (shader compile included), for load measurements
+  const onReady = useCallback(() => { setReady(true); requestAnimationFrame(() => requestAnimationFrame(() => performance.mark('maker-3d-visible'))) }, [])
   const onError = useCallback(() => { setFailed(true); setReady(false) }, [])
 
   const status = !webgl ? '3D needs WebGL — showing a still'
@@ -136,8 +137,15 @@ export default function Maker({ onOpen }) {
   return (
     <section className="maker" id="maker" ref={section} aria-labelledby="maker-title">
       <motion.div className={ready && enabled ? 'maker-stage is-live' : 'maker-stage'} style={{ opacity: stageOpacity }} aria-hidden="true">
-        {/* still only without live 3D; while the scene loads the stage shows its sky and the canvas fades in, as in Aboutme */}
-        {!enabled && <img className="maker-poster" src="images/maker-poster.webp" srcSet="images/maker-poster-900.webp 900w, images/maker-poster.webp 1600w" sizes="100vw" alt="" width="1600" height="1000" decoding="async" />}
+        {/* the still shows at once and stays under the canvas, which fades in over it once the scene is ready (or never:
+            no WebGL, 3D off, or a failed load) */}
+        {/* rendered from the live opening frame (wide for landscape, 1:2 for phones, 3:4 for portrait tablets) and
+            centred, so cover-scaling by the height matches the 3D framing, which is set by the height too */}
+        <picture>
+          <source media="(max-aspect-ratio: 3/5)" srcSet="images/maker-poster-phone.webp" />
+          <source media="(max-aspect-ratio: 1/1)" srcSet="images/maker-poster-tablet.webp" />
+          <img className="maker-poster" src="images/maker-poster.webp" srcSet="images/maker-poster-1200.webp 1200w, images/maker-poster.webp 2400w" sizes="240svh" alt="" width="2400" height="1000" decoding="async" fetchPriority="high" />
+        </picture>
         {enabled && near && (
           <Boundary onError={onError}>
             <Suspense fallback={null}>
