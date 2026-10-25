@@ -44,7 +44,9 @@ const MODEL = {
 // fraction of the focus distance (sx > 0 pushes the subject left of the right-hand timeline, sy < 0 raises it).
 type Stop = { c: [number, number, number]; f: [number, number, number]; sx: number; sy?: number }
 const STOPS: Stop[] = [
-  { c: [0, 1.5, 7.2], f: [0, 1.5, 0.05], sx: 0, sy: -0.058 }, // opening: level and centred, eyes ~37% from the top
+  // opening: level and centred, eyes ~43% from the top; grounding (step 5) then sets the size so the chest
+  // edge sits on the viewport bottom, leaving the whole head clear of the nav bar
+  { c: [0, 1.5, 7.2], f: [0, 1.5, 0.05], sx: 0, sy: -0.03 },
   { c: [2.2, 0.75, 1.9], f: [0.33, 1.38, 0.02], sx: 0.2 }, // education: low three-quarter, cheek
   { c: [1.28, 1.25, 1.57], f: [0.29, 1.16, -0.05], sx: 0.16 }, // think: square on the cheek kiss
   { c: [-1.6, 1.75, 1.7], f: [-0.25, 1.5, 0.03], sx: 0.2 }, // innovate: swing to the other side, eye level

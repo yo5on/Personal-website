@@ -92,7 +92,8 @@ function App() {
         {page === 'credentials' && <Certificates onOpen={open} />}
         {page === 'contact' && <Contact />}
       </motion.main>
-      <Footer page={page} />
+      {/* Maker ends on its bottom-anchored bust, as in Aboutme: no footer after it */}
+      {page !== 'maker' && <Footer page={page} />}
       <AnimatePresence custom={exitTo}>{active && <CaseView key="case" project={active} origin={origin} onClose={close} onNavigate={navigate} />}</AnimatePresence>
     </MotionConfig>
   )

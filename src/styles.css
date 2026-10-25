@@ -660,7 +660,6 @@ main { min-height: calc(100svh - 90px); } /* short pages (Contact) keep the foot
    The Maker page snaps between this screen and the timeline (a deliberate step, not a half-scrolled hero); inside
    the timeline, taller than the screen, scrolling stays free. */
 html:has(.maker) { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
-html:has(.maker) .footer { scroll-snap-align: end; }
 .maker-intro { height: 100vh; height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 0 24px; text-align: center; scroll-snap-align: start; }
 /* the copy sits a little lower than the cue so the title starts at the bust's chin; translate leaves the layout and motion's transforms alone */
 .maker-copy { translate: 0 1.5vh; }

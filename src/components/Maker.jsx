@@ -104,6 +104,10 @@ export default function Maker({ onOpen }) {
   const cueOpacity = useTransform(scrollY, [0, 160], [1, 0])
   const gradientOpacity = useTransform(scrollY, [0, 240], [1, 0])
   const railOpacity = useTransform(scrollY, [vh * 0.5, vh * 1.1], [0, 1])
+  // Once the chapter's end passes the viewport bottom the sticky stage scrolls up with it; fade it out so its
+  // bottom (the torso) never trails into the footer.
+  const { scrollYProgress: endProgress } = useScroll({ target: section, offset: ['end end', 'end 0.6'] })
+  const stageOpacity = useTransform(endProgress, [0, 1], [1, 0])
 
   useEffect(() => {
     const el = section.current
@@ -131,7 +135,7 @@ export default function Maker({ onOpen }) {
 
   return (
     <section className="maker" id="maker" ref={section} aria-labelledby="maker-title">
-      <div className={ready && enabled ? 'maker-stage is-live' : 'maker-stage'} aria-hidden="true">
+      <motion.div className={ready && enabled ? 'maker-stage is-live' : 'maker-stage'} style={{ opacity: stageOpacity }} aria-hidden="true">
         {/* still only without live 3D; while the scene loads the stage shows its sky and the canvas fades in, as in Aboutme */}
         {!enabled && <img className="maker-poster" src="images/maker-poster.webp" srcSet="images/maker-poster-900.webp 900w, images/maker-poster.webp 1600w" sizes="100vw" alt="" width="1600" height="1000" decoding="async" />}
         {enabled && near && (
@@ -144,7 +148,7 @@ export default function Maker({ onOpen }) {
         <motion.div className="maker-scrim" style={{ opacity: scrimOpacity }} />
         <motion.div className="maker-rail" style={{ opacity: railOpacity }} />
         <motion.div className="maker-gradient" style={{ opacity: gradientOpacity }} />
-      </div>
+      </motion.div>
 
       <div className="maker-flow">
         <header className="maker-intro">
