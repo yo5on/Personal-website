@@ -57,12 +57,13 @@ if (STOPS.length !== M + 1) throw new Error('Scene: STOPS needs the opening stop
 
 const EYE_MID = new THREE.Vector3(0.17, 0.15, 0) // me.glb model space, between the painted eyes
 
-// Gradient sky sphere wrapped around the camera: navy above, deep navy below, so the bust sits in the moth's world
+// Gradient sky sphere wrapped around the camera: graphite above, near-black below, so the bust sits in the moth's world.
+// Matches --stage-top/--stage-bottom in styles.css (navy palette: #2a2e6b / #0d0f2a)
 function GradientBackground() {
   const uniforms = useMemo(
     () => ({
-      uTop: { value: new THREE.Color('#2a2e6b') },
-      uBottom: { value: new THREE.Color('#0d0f2a') },
+      uTop: { value: new THREE.Color('#2b2b2b') },
+      uBottom: { value: new THREE.Color('#0c0c0c') },
       uSteep: { value: 1.4 }, // the narrow lens only sees the middle band; steep stretches the transition into view
     }),
     []

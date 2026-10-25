@@ -36,15 +36,26 @@
   size-adjust: 109.13%; ascent-override: 93.93%; descent-override: 25.2%; line-gap-override: 0%;
 }
 :root {
-  --navy: #1b1e4a;
-  --navy-deep: #15173c;
-  --stone: #afaea2;
-  --stone-soft: rgba(175, 174, 162, 0.86); /* ≈5.6:1 on navy — secondary text */
-  --stone-faint: rgba(175, 174, 162, 0.48); /* decorative strokes only, never text */
-  --hair: rgba(175, 174, 162, 0.2);
-  --crimson: #d21319;
-  --moth-ivory: #f3ead7; /* the moth mark's wings */
-  --crimson-text: #da1e24; /* crimson for display text only: 3.0–3.4:1 on navy (large-text AA); #d21319 stays for ribbons, rules and marks */
+  /* Palette: Obsidian & Vermilion (experiment). The token names are the old role names — navy = page background,
+     stone = primary text, stone-soft = secondary text, crimson = accent — so swapping this block re-themes the site.
+     The previous navy palette is kept below under [data-palette="navy"]: set it on <html> to compare. */
+  --navy: #171717;                      /* Obsidian — page background */
+  --navy-deep: #111111;                 /* a step darker for overlays: menu sheet, case view, maker section */
+  --bg-rgb: 23, 23, 23;                 /* Obsidian as channels, for translucent fills */
+  --deep-rgb: 12, 12, 12;               /* shadow/vignette channels */
+  --surface-rgb: 52, 52, 52;            /* Graphite #343434 — cards, secondary surfaces */
+  --stone: #f0ede5;                     /* Warm Ivory — primary text and headings, ≈15.6:1 on obsidian */
+  --stone-soft: #a8a49b;                /* Warm Stone — secondary text, ≈7.4:1 on obsidian */
+  --stone-faint: rgba(168, 164, 155, 0.48); /* decorative strokes only, never text */
+  --hair: #343434;                      /* Graphite — borders and dividers */
+  --crimson: #e34234;                   /* Vermilion — accent: rules, marks, ribbons, underlines */
+  --moth-ivory: #ffffff;                /* hover lift above ivory text */
+  --crimson-text: #e34234;              /* Vermilion as text: ≈4.4:1 on obsidian (AA large text, and 3:1 for focus rings) */
+  --heading: #f0ede5;                   /* display headings: ivory, so vermilion stays an accent */
+  --heading-em: #e34234;                /* the italic accent word inside a heading */
+  --hero-glow: rgba(52, 52, 52, 0.5);   /* soft Graphite light behind the moth */
+  --stage-top: #2b2b2b;                 /* maker stage gradient (CSS fallback; the 3D sky in Scene.tsx matches) */
+  --stage-bottom: #0c0c0c;
   /* Three faces, one job each:
      Instrument Serif — display: hero and contact statements, project titles, the index and the mobile menu
        (one weight; its italic only for the stone accent words);
@@ -61,6 +72,15 @@
   color-scheme: dark;
 }
 
+/* Previous palette (Specimen navy & crimson). The 3D sky, theme-color meta and maker poster don't follow this switch. */
+:root[data-palette="navy"] {
+  --navy: #1b1e4a; --navy-deep: #15173c; --bg-rgb: 27, 30, 74; --deep-rgb: 11, 12, 34; --surface-rgb: 20, 22, 58;
+  --stone: #afaea2; --stone-soft: rgba(175, 174, 162, 0.86); --stone-faint: rgba(175, 174, 162, 0.48); --hair: rgba(175, 174, 162, 0.2);
+  --crimson: #d21319; --moth-ivory: #f3ead7; --crimson-text: #da1e24; --hero-glow: rgba(36, 40, 96, 0.55);
+  --stage-top: #2a2e6b; --stage-bottom: #0d0f2a;
+  --heading: #da1e24; --heading-em: #afaea2;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 html { background: var(--navy); scroll-behavior: smooth; scroll-padding-top: 76px; -webkit-text-size-adjust: 100%; }
 body {
@@ -73,7 +93,7 @@ body {
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 /* touch feedback in the palette: a faint stone flash instead of the browser's default cyan; focus outlines are unaffected */
-a, button, .entry-plate { -webkit-tap-highlight-color: rgba(175, 174, 162, 0.18); }
+a, button, .entry-plate { -webkit-tap-highlight-color: rgba(168, 164, 155, 0.18); }
 h1, h2, h3, p, ol, dl, dd, figure { margin: 0; padding: 0; }
 ol { list-style: none; }
 ::selection { background: var(--crimson); color: #fff; }
@@ -115,7 +135,7 @@ ol { list-style: none; }
   transition: background 0.6s var(--ease);
 }
 .nav::after { content: ''; position: absolute; left: 1.2vw; right: 1.2vw; bottom: 0; height: 1px; background: var(--hair); }
-.nav.is-scrolled { background: rgba(27, 30, 74, 0.86); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.nav.is-scrolled { background: rgba(var(--bg-rgb), 0.86); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .brand { justify-self: start; display: inline-flex; align-items: center; gap: 12px; font: 400 27px/1 var(--display); letter-spacing: 0.06em; color: var(--crimson-text); }
 /* wordmark: Hello Wimsy, lowercase; a short line box keeps the nav height */
 .brand-word { font: 400 32px/0.8 'Hello Wimsy', var(--display); letter-spacing: 0.01em; text-transform: lowercase; }
@@ -142,7 +162,7 @@ ol { list-style: none; }
 
 .menu-sheet { position: fixed; inset: 0; z-index: 25; background: var(--navy-deep); display: flex; flex-direction: column; justify-content: center; gap: 48px; padding: 96px var(--gutter) 40px; }
 .menu-sheet nav { display: flex; flex-direction: column; gap: 4px; }
-.menu-sheet nav a { font: 400 clamp(52px, 15vw, 84px)/1 var(--display); letter-spacing: 0; text-transform: uppercase; color: var(--crimson-text); }
+.menu-sheet nav a { font: 400 clamp(52px, 15vw, 84px)/1 var(--display); letter-spacing: 0; text-transform: uppercase; color: var(--heading); }
 .menu-foot { display: flex; gap: 28px; font: 500 var(--fs-label) var(--ui); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--stone-soft); }
 
 /* ------------------------------------------------------------------ */
@@ -152,8 +172,8 @@ ol { list-style: none; }
   position: relative; isolation: isolate; overflow: hidden;
   height: 100svh; min-height: 680px; max-height: 1100px;
   background:
-    radial-gradient(70% 70% at 62% 50%, rgba(36, 40, 96, 0.55) 0%, transparent 70%),
-    radial-gradient(140% 120% at 50% 50%, transparent 55%, rgba(11, 12, 34, 0.55) 100%),
+    radial-gradient(70% 70% at 62% 50%, var(--hero-glow) 0%, transparent 70%),
+    radial-gradient(140% 120% at 50% 50%, transparent 55%, rgba(var(--deep-rgb), 0.55) 100%),
     var(--navy);
   --art-w: min(78vw, 132svh);
 }
@@ -176,7 +196,7 @@ ol { list-style: none; }
 .moth { position: absolute; z-index: 2; left: 12.5%; top: 15.27%; width: 75%; aspect-ratio: 1536 / 977; animation: float 9s ease-in-out infinite; }
 .moth img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .moth-shadow { z-index: 0; }
-.moth-shadow img { filter: drop-shadow(0 30px 40px rgba(8, 9, 28, 0.45)); }
+.moth-shadow img { filter: drop-shadow(0 30px 40px rgba(var(--deep-rgb), 0.5)); }
 /* the hero's ambient loops stop while it is out of view */
 .hero.is-offscreen .moth, .hero.is-offscreen .ribbons { animation-play-state: paused; }
 @keyframes float { 0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); } 50% { transform: translate3d(0, -0.9%, 0) rotate(-0.4deg); } }
@@ -189,11 +209,11 @@ ol { list-style: none; }
   margin-top: 3.4vh;
   font: 400 clamp(48px, min(6.3vw, 10.8vh), 116px)/0.9 var(--display);
   text-transform: uppercase; letter-spacing: 0;
-  color: var(--crimson-text);
+  color: var(--heading);
 }
 /* room for italic descenders and overhang inside the reveal mask, pitch unchanged */
 .hero-title .line { padding: 0 0.08em 0.16em 0; margin-bottom: -0.16em; white-space: nowrap; } /* each line is a deliberate break; also stops the wider fallback font re-wrapping it while fonts load */
-.hero-title .title-em { font-style: italic; text-transform: none; letter-spacing: 0; color: var(--stone); }
+.hero-title .title-em { font-style: italic; text-transform: none; letter-spacing: 0; color: var(--heading-em); }
 .hero-tagline { margin-top: 3.2vh; font: 400 clamp(13px, 1vw, 15px)/1.75 var(--ui); letter-spacing: 0; color: var(--stone); }
 .hero-cta { display: inline-flex; align-items: center; gap: 16px; margin-top: 3.6vh; color: var(--stone); padding: 6px 0; transition: color 0.3s; }
 .hero-cta .icon { color: var(--crimson); width: 14px; height: 14px; transition: transform 0.4s var(--ease); }
@@ -217,8 +237,8 @@ ol { list-style: none; }
 .work, .certificates, .contact { position: relative; padding: 150px var(--gutter) 130px; }
 .section-head { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 9fr); column-gap: 3vw; align-items: end; margin-bottom: 96px; }
 .section-head .kicker { align-self: start; padding-top: 16px; }
-.section-title { font: 500 clamp(30px, 3.7vw, 58px)/1.08 var(--ui); letter-spacing: -0.02em; text-transform: uppercase; color: var(--crimson-text); }
-.section-title em { font-style: italic; font-weight: 400; text-transform: none; color: var(--stone); }
+.section-title { font: 500 clamp(30px, 3.7vw, 58px)/1.08 var(--ui); letter-spacing: -0.02em; text-transform: uppercase; color: var(--heading); }
+.section-title em { font-style: italic; font-weight: 400; text-transform: none; color: var(--heading-em); }
 .section-note { grid-column: 2; margin-top: 26px; max-width: 440px; font: 400 14px/1.65 var(--ui); color: var(--stone-soft); }
 
 /* ------------------------------------------------------------------ */
@@ -232,9 +252,11 @@ ol { list-style: none; }
 .entry-text { grid-column: 9 / span 4; }
 .entry.is-flipped .entry-plate { grid-column: 6 / span 7; grid-row: 2; }
 .entry.is-flipped .entry-text { grid-column: 1 / span 4; grid-row: 2; }
-.entry-title { font: 400 clamp(40px, 4.4vw, 72px)/0.95 var(--display); letter-spacing: 0; text-transform: uppercase; color: var(--crimson-text); }
+.entry-title { font: 400 clamp(40px, 4.4vw, 72px)/0.95 var(--display); letter-spacing: 0; text-transform: uppercase; color: var(--heading); }
 /* titles and images open the project view, like "Open study" */
 .entry-title-link { display: inline-block; text-align: left; text-transform: inherit; letter-spacing: inherit; transition: color 0.4s var(--ease); }
+.entry-title-link:focus-visible { color: var(--crimson-text); }
+@media (hover: hover) { .entry-title-link:hover { color: var(--crimson-text); } }
 .entry-plate { cursor: pointer; }
 .entry-intro { margin-top: 22px; font: 400 14px/1.7 var(--ui); color: var(--stone); max-width: 400px; }
 .entry-stack { display: flex; flex-wrap: wrap; margin-top: 22px; line-height: 1.9; color: var(--stone); font-size: 11px; }
@@ -256,7 +278,7 @@ ol { list-style: none; }
 @media (hover: hover) { .entry:hover .open-arrow { transform: translateX(4px); } }
 .entry-open:active .open-arrow, .hero-cta:active .icon, .work-index a:active .work-index-arrow { transform: translateX(1px); transition-duration: 0.1s; }
 
-.plate { position: relative; padding: 26px; aspect-ratio: 4 / 3; display: flex; flex-direction: column; background: rgba(20, 22, 58, 0.6); }
+.plate { position: relative; padding: 26px; aspect-ratio: 4 / 3; display: flex; flex-direction: column; background: rgba(var(--surface-rgb), 0.45); }
 .plate svg { flex: 1; width: 100%; min-height: 0; overflow: visible; fill: none; stroke: var(--stone); stroke-width: 1; stroke-opacity: 0.7; stroke-linecap: round; }
 .plate svg text { fill: var(--stone); fill-opacity: 0.9; stroke: none; font: 400 9px var(--code); letter-spacing: 0.06em; }
 .plate .ink-accent { stroke: var(--crimson); stroke-opacity: 1; }
@@ -287,7 +309,7 @@ ol { list-style: none; }
 .case-close { display: inline-flex; gap: 10px; align-items: center; color: var(--stone); font: inherit; letter-spacing: inherit; text-transform: inherit; padding: 8px 0; }
 .case-close .icon { color: var(--crimson); width: 13px; height: 13px; }
 .case-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 5vw; align-items: start; padding: 96px 0 120px; }
-.case-title { font: 400 clamp(52px, 6.4vw, 112px)/0.92 var(--display); letter-spacing: 0; text-transform: uppercase; color: var(--crimson-text); }
+.case-title { font: 400 clamp(52px, 6.4vw, 112px)/0.92 var(--display); letter-spacing: 0; text-transform: uppercase; color: var(--heading); }
 .case-detail { margin-top: 32px; max-width: 34em; font: 400 var(--fs-body)/var(--lh-body) var(--ui); color: var(--stone); }
 .case-facts { margin-top: 44px; border-top: 1px solid var(--hair); }
 .case-facts div { display: grid; grid-template-columns: 120px 1fr; gap: 20px; padding: 14px 0; border-bottom: 1px solid var(--hair); }
@@ -323,7 +345,7 @@ ol { list-style: none; }
 .study-note { margin-top: 12px; max-width: 22em; font: 400 var(--fs-small)/1.55 var(--ui); color: var(--stone-soft); }
 
 .case-next { display: block; width: 100%; text-align: left; padding: 60px 0 40px; border-top: 1px solid var(--hair); }
-.case-next-title { display: block; margin-top: 18px; font: 400 clamp(38px, 4.8vw, 76px)/1 var(--display); letter-spacing: 0; text-transform: uppercase; color: var(--crimson-text); }
+.case-next-title { display: block; margin-top: 18px; font: 400 clamp(38px, 4.8vw, 76px)/1 var(--display); letter-spacing: 0; text-transform: uppercase; color: var(--heading); }
 .case-next-title .icon-next { width: 0.62em; height: 0.62em; color: var(--stone); vertical-align: 0.04em; }
 
 /* ------------------------------------------------------------------ */
@@ -348,12 +370,12 @@ ol { list-style: none; }
 @media (hover: hover) { .work-index a:hover .work-index-title { color: var(--crimson-text); } .work-index a:hover .work-index-arrow { transform: translateX(4px); } }
 
 /* Certificates: one featured certificate with the next ones stacked behind it, title and details beside it.
-   Interface colours: navy, stone (text; lines as stone at low opacity) and crimson #d21319. The artwork is untouched. */
+   Interface colours come from the :root tokens (background, text, accent). The artwork is untouched. */
 .certificates { --crimson-text: var(--crimson); overflow-x: clip; } /* the stacked cards lean out a little; never past the page edge */
-.certificates :focus-visible { outline: 1px solid var(--stone); outline-offset: 5px; } /* stone: crimson is under 3:1 on navy */
+.certificates :focus-visible { outline: 1px solid var(--stone); outline-offset: 5px; } /* ivory: the section's accent is the mark crimson, kept off focus rings */
 .cs { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: 5vw; align-items: center; margin-top: 56px; }
 .cs-stage { position: relative; max-width: 620px; padding: clamp(18px, 2.2vw, 30px); touch-action: pan-y; }
-.cs-stage .plate-corner { width: 12px; height: 12px; border-color: rgba(175, 174, 162, 0.35); }
+.cs-stage .plate-corner { width: 12px; height: 12px; border-color: var(--stone-faint); }
 .cs-stack { position: relative; aspect-ratio: 1.414; }
 .cs-card { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; -webkit-user-drag: none; }
 .cs-card img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
@@ -396,8 +418,8 @@ ol { list-style: none; }
 }
 
 .contact { padding-bottom: 110px; }
-.contact-title { margin-top: 56px; font: 400 clamp(60px, 9vw, 150px)/0.9 var(--display); letter-spacing: 0; text-transform: uppercase; color: var(--crimson-text); }
-.contact-title em { font-style: italic; text-transform: none; color: var(--stone); }
+.contact-title { margin-top: 56px; font: 400 clamp(60px, 9vw, 150px)/0.9 var(--display); letter-spacing: 0; text-transform: uppercase; color: var(--heading); }
+.contact-title em { font-style: italic; text-transform: none; color: var(--heading-em); }
 .contact-mail { display: inline-block; margin-top: 52px; font: 400 clamp(17px, 1.9vw, 28px)/1.3 var(--ui); letter-spacing: -0.01em; color: var(--stone); padding-bottom: 8px; background: linear-gradient(var(--crimson), var(--crimson)) left bottom / 30% 1px no-repeat; transition: background-size 0.7s var(--ease); }
 .contact-mail:hover, .contact-mail:focus-visible { background-size: 100% 1px; }
 .contact-mail .icon-mail { width: 0.55em; height: 0.55em; margin-left: 0.3em; color: var(--crimson); vertical-align: 0.05em; }
@@ -535,7 +557,7 @@ ol { list-style: none; }
 .ledger > .kicker { padding-top: 14px; }
 .ledger ol li { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 5fr) auto; gap: 8px 3vw; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--hair); }
 .ledger ol li:first-child { border-top: 1px solid var(--hair); }
-.ledger-title { font: 400 clamp(20px, 1.8vw, 26px)/1.2 var(--display); text-transform: uppercase; color: var(--crimson-text); }
+.ledger-title { font: 400 clamp(20px, 1.8vw, 26px)/1.2 var(--display); text-transform: uppercase; color: var(--heading); }
 .ledger-what { font: 400 var(--fs-small)/1.6 var(--ui); color: var(--stone-soft); }
 .ledger-link { font: 500 var(--fs-label)/1.6 var(--ui); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--stone); padding: 6px 0; text-decoration: underline 1px var(--crimson); text-underline-offset: 5px; }
 .ledger-link:hover, .ledger-link:focus-visible { color: var(--crimson-text); }
@@ -544,7 +566,7 @@ ol { list-style: none; }
 /* Fig. 02 — The Maker: a sticky stage behind ordinary scrolling cards */
 /* ------------------------------------------------------------------ */
 .maker { position: relative; overflow-x: clip; background: var(--navy-deep); }
-.maker-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; background: radial-gradient(80% 90% at 40% 40%, #2a2e6b 0%, #0d0f2a 100%); }
+.maker-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; background: radial-gradient(80% 90% at 40% 40%, var(--stage-top) 0%, var(--stage-bottom) 100%); }
 .maker-poster, .maker-canvas { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
 .maker-poster { object-fit: cover; object-position: 38% 30%; transition: opacity 0.8s var(--ease); }
 .maker-canvas { opacity: 0; transition: opacity 1.2s var(--ease); }
@@ -552,15 +574,15 @@ ol { list-style: none; }
 .maker-stage.is-live .maker-poster { opacity: 0; }
 /* desktop: a soft navy fall-off under the right-hand timeline so text always reads; the bust stays left */
 .maker-shade { position: absolute; inset: 0; pointer-events: none; background:
-  linear-gradient(90deg, transparent 36%, rgba(13, 15, 42, 0.86) 70%),
-  linear-gradient(180deg, rgba(21, 23, 60, 0.55) 0%, transparent 18%, transparent 78%, rgba(21, 23, 60, 0.7) 100%); }
+  linear-gradient(90deg, transparent 36%, rgba(var(--bg-rgb), 0.86) 70%),
+  linear-gradient(180deg, rgba(var(--bg-rgb), 0.55) 0%, transparent 18%, transparent 78%, rgba(var(--bg-rgb), 0.7) 100%); }
 
 /* the flow scrolls over the stage: pulled up by one stage height; only its cards take pointer input */
 .maker-flow { position: relative; z-index: 2; margin-top: -100svh; pointer-events: none; }
 .maker-flow a, .maker-flow button, .maker-card { pointer-events: auto; }
 .maker-intro { min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 var(--gutter) 14svh; margin-left: 56%; }
-.maker-title { margin-top: 18px; font: 400 clamp(56px, 7vw, 120px)/0.9 var(--display); text-transform: uppercase; color: var(--crimson-text); }
-.maker-title em { font-style: italic; text-transform: none; color: var(--stone); }
+.maker-title { margin-top: 18px; font: 400 clamp(56px, 7vw, 120px)/0.9 var(--display); text-transform: uppercase; color: var(--heading); }
+.maker-title em { font-style: italic; text-transform: none; color: var(--heading-em); }
 .maker-lede { margin-top: 26px; max-width: 32em; font: 400 16px/var(--lh-body) var(--ui); color: var(--stone); }
 .maker-hint { margin-top: 22px; font: italic 400 13px/1.6 var(--ui); color: var(--stone-soft); }
 
@@ -607,18 +629,18 @@ ol { list-style: none; }
   /* phones: the bust is centred near the top; cards are full width and scroll over it on a navy ground */
   .maker-poster, .maker-canvas { height: 62% !important; }
   .maker-poster { object-position: 32% 0%; }
-  .maker-shade { background: linear-gradient(180deg, rgba(21, 23, 60, 0.5) 0%, transparent 14%, transparent 44%, #0d0f2a 62%); }
+  .maker-shade { background: linear-gradient(180deg, rgba(var(--bg-rgb), 0.5) 0%, transparent 14%, transparent 44%, var(--stage-bottom) 62%); }
   .maker-intro { margin-left: 0; padding-bottom: 96px; }
   .maker-title { font-size: clamp(52px, 17vw, 84px); }
   .maker-lede { font-size: 15px; line-height: 1.7; }
   .maker-nodes { padding-bottom: 20svh; }
   /* tall enough that the previous card has left the screen when the next one locks at 60% */
   .maker-node { margin-left: 0; min-height: 104svh; align-items: flex-end; padding-bottom: 6svh; }
-  .maker-card { max-width: none; padding: 20px 18px 16px; background: rgba(21, 23, 60, 0.92); border: 1px solid var(--hair); border-top-color: var(--crimson); }
+  .maker-card { max-width: none; padding: 20px 18px 16px; background: rgba(var(--bg-rgb), 0.92); border: 1px solid var(--hair); border-top-color: var(--crimson); }
   /* the toggle moves to the top-right, under the nav bar, clear of the cards */
   .maker-controls { left: auto; right: var(--gutter); justify-content: flex-start; padding: 0; }
   .maker-controls-inner { top: 76px; bottom: auto; text-align: right; }
-  .maker-toggle { padding: 8px 10px; background: rgba(13, 15, 42, 0.72); }
+  .maker-toggle { padding: 8px 10px; background: rgba(var(--bg-rgb), 0.72); }
 }
 
 /* Social links: GitHub / LinkedIn / email as small circular icon buttons (the Aboutme treatment) in nav, menu,
@@ -626,13 +648,13 @@ ol { list-style: none; }
 .social { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .social > li > a {
   display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0;
-  border: 1px solid var(--hair); border-radius: 50%; background: rgba(13, 15, 42, 0.78); color: var(--stone);
+  border: 1px solid var(--hair); border-radius: 50%; background: rgba(var(--surface-rgb), 0.5); color: var(--stone);
   text-decoration: none; transition: color 0.25s, border-color 0.25s, background 0.25s, transform 0.35s var(--ease);
 }
 .social > li > a::after { content: none; }
 .social svg { width: 16px; height: 16px; }
 .social > li > a:focus-visible { color: var(--moth-ivory); border-color: var(--crimson); outline-offset: 3px; }
-@media (hover: hover) { .social > li > a:hover { color: var(--moth-ivory); border-color: var(--crimson); background: rgba(13, 15, 42, 0.95); transform: translateY(-2px); } }
+@media (hover: hover) { .social > li > a:hover { color: var(--moth-ivory); border-color: var(--crimson); background: rgba(var(--surface-rgb), 0.9); transform: translateY(-2px); } }
 .social > li > a:active { transform: scale(0.94); transition-duration: 0.1s; }
 @media (max-width: 760px) {
   .social { gap: 10px; }

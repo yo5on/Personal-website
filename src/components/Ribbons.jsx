@@ -99,7 +99,7 @@ const BUILT = RIBBONS.map(build)
 export function RibbonLayer({ layer, className }) {
   return (
     <svg className={className} viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
-      <g fill="#D21319">
+      <g style={{ fill: 'var(--crimson)' }}>
         {BUILT.map((r, i) => (r[layer] || []).map((d, j) => <path key={`${i}-${j}`} d={d} />))}
       </g>
     </svg>

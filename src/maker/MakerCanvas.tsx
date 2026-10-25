@@ -52,7 +52,7 @@ export default function MakerCanvas({
         powerPreference: phone ? 'default' : 'high-performance',
       }}
     >
-      <color attach="background" args={['#1b1e4a']} />
+      <color attach="background" args={['#171717']} />
       <AdaptiveDpr max={maxDpr} />
       <Suspense fallback={null}>
         <Scene phone={phone} onReady={onReady} />
