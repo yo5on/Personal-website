@@ -661,7 +661,9 @@ main { min-height: calc(100svh - 90px); } /* short pages (Contact) keep the foot
    the timeline, taller than the screen, scrolling stays free. */
 html:has(.maker) { scroll-snap-type: y mandatory; scroll-padding-top: 0; }
 html:has(.maker) .footer { scroll-snap-align: end; }
-.maker-intro { height: 100vh; height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 0 24px 3vh; text-align: center; scroll-snap-align: start; }
+.maker-intro { height: 100vh; height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 0 24px; text-align: center; scroll-snap-align: start; }
+/* the copy sits a little lower than the cue so the title starts at the bust's chin; translate leaves the layout and motion's transforms alone */
+.maker-copy { translate: 0 1.5vh; }
 .maker-title { margin: 0; font: 400 clamp(44px, 7.2vw, 96px)/0.95 var(--display); text-transform: uppercase; color: var(--heading); }
 .maker-title-text { display: block; }
 .maker-title em { font-style: italic; text-transform: none; color: var(--heading-em); }

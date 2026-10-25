@@ -18,7 +18,7 @@ const projectFromHash = () => {
   return m ? projects.find(p => p.id === m[1]) ?? null : null
 }
 
-const TITLES = { work: 'Think. Innovate. Fabricate.', maker: 'The maker', credentials: 'Credentials', contact: 'Contact' }
+const TITLES = { origin: 'Think. Innovate. Fabricate.', work: 'Work', maker: 'The maker', credentials: 'Credentials', contact: 'Contact' }
 
 function App() {
   const [page, setPage] = useState(() => pageFromHash(window.location.hash))
@@ -85,8 +85,9 @@ function App() {
       <Nav page={page} />
       {/* One page at a time, so the 3D scene only exists on Maker; a short fade in, no exit wait. */}
       <motion.main key={page} ref={main} tabIndex={-1} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
-        {/* Work is the landing page: the hero introduces it, the projects follow */}
-        {page === 'work' && <><Hero /><Work onOpen={open} /></>}
+        {/* Origin is the landing page: the hero alone; the projects are their own page */}
+        {page === 'origin' && <Hero />}
+        {page === 'work' && <Work onOpen={open} />}
         {page === 'maker' && <Maker onOpen={open} />}
         {page === 'credentials' && <Certificates onOpen={open} />}
         {page === 'contact' && <Contact />}

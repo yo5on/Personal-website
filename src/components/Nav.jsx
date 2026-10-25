@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScro
 import { BrandStar } from './Icons.jsx'
 import SocialLinks from './SocialLinks.jsx'
 
-const links = [['Work', '#work'], ['Maker', '#maker'], ['Credentials', '#credentials'], ['Contact', '#contact']]
+const links = [['Origin', '#origin'], ['Work', '#work'], ['Maker', '#maker'], ['Credentials', '#credentials'], ['Contact', '#contact']]
 const ease = [0.22, 1, 0.36, 1]
 // Everything outside the header and the menu sheet is taken out of reach while the sheet is open.
 const BACKGROUND = '.skip, main, footer, .nav .brand, .nav-links, .nav-aside'

@@ -46,7 +46,7 @@ export default function Hero() {
   })
 
   return (
-    <section className="hero" id="top" ref={ref} aria-labelledby="hero-title">
+    <section className="hero" id="origin" ref={ref} aria-labelledby="hero-title">
       <div className="hero-grain" aria-hidden="true" />
 
       <motion.div className="art" style={{ y: artY }} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0 : 1.4, delay: reduced ? 0 : 0.1, ease }}>

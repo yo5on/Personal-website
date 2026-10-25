@@ -149,14 +149,14 @@ export default function Maker({ onOpen }) {
       <div className="maker-flow">
         <header className="maker-intro">
           {/* the scroll-out lives on outer wrappers so it never fights the entrance animations inside */}
-          <motion.div ref={intro} style={reduced ? { opacity: introOpacity } : { filter: introBlur, opacity: introOpacity }}>
-            {/* Entrance on mount (this is the first screen): painted blurred from the first frame, resolving to crisp.
+          <motion.div ref={intro} className="maker-copy" style={reduced ? { opacity: introOpacity } : { filter: introBlur, opacity: introOpacity }}>
+            {/* Entrance on mount (this is the first screen): painted blurred from the first frame, settling to a faint haze (not fully crisp) by design.
                 No clipping mask, which would hide the blur instead of showing it. */}
             <motion.h2 id="maker-title" className="maker-title" style={reduced ? undefined : { y: titleY, letterSpacing: titleSpacing }}>
-              <motion.span className="maker-title-text" initial={reduced ? false : { opacity: 0.35, y: 22, filter: 'blur(18px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 1.8, delay: 0.25, ease }}>The <em>maker.</em></motion.span>
+              <motion.span className="maker-title-text" initial={reduced ? false : { opacity: 0.35, y: 22, filter: 'blur(18px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(1.6px)' }} transition={{ duration: 1.8, delay: 0.25, ease }}>The <em>maker.</em></motion.span>
             </motion.h2>
             <motion.div style={reduced ? undefined : { y: bodyY }}>
-              <motion.p className="maker-lede" initial={reduced ? false : { opacity: 0.25, y: 16, filter: 'blur(12px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 1.6, delay: 0.55, ease }}>{maker.intro}</motion.p>
+              <motion.p className="maker-lede" initial={reduced ? false : { opacity: 0.25, y: 16, filter: 'blur(12px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0.95px)' }} transition={{ duration: 1.6, delay: 0.55, ease }}>{maker.intro}</motion.p>
             </motion.div>
           </motion.div>
           <motion.div className="maker-cue" style={{ opacity: cueOpacity }} aria-hidden="true">
