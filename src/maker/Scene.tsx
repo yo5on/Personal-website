@@ -256,6 +256,21 @@ function Man({
     return () => { live = false }
   }, [get, onReady])
 
+  // The shadow map only sees the key light and the bust, and neither moves (the eyes are a texture effect; a
+  // directional light's shadow ignores the view camera), so it is redrawn only when that changes: the bust
+  // appearing, or a restored GL context (whose shadow texture comes back empty), not every frame.
+  useEffect(() => {
+    const { gl } = get()
+    const update = () => { gl.shadowMap.needsUpdate = true }
+    gl.shadowMap.autoUpdate = false
+    update()
+    gl.domElement.addEventListener('webglcontextrestored', update)
+    return () => {
+      gl.domElement.removeEventListener('webglcontextrestored', update)
+      gl.shadowMap.autoUpdate = true
+    }
+  }, [get, shown])
+
   const path = useMemo(
     () => ({
       curve: new THREE.CatmullRomCurve3(
