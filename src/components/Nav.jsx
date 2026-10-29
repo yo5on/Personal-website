@@ -37,9 +37,9 @@ export default function Nav({ page }) {
     // Back/Forward (including Android's Back gesture) closes the menu instead of leaving it open over
     // another scroll position or a project view; a menu link's own hash change closes it the same way.
     const onHistory = () => setOpen(false)
-    // Widening past the phone breakpoint (window resize, or a phone turned to landscape) hides the Menu/Close
+    // Widening past the Menu breakpoint (window resize, or a tablet turned to landscape) hides the Menu/Close
     // button; close the sheet then too, so it cannot stay over the desktop layout with the page still locked.
-    const desktop = window.matchMedia('(min-width: 761px)')
+    const desktop = window.matchMedia('(min-width: 901px)')
     const onLayout = e => { if (e.matches) setOpen(false) }
     window.addEventListener('keydown', onKey)
     window.addEventListener('popstate', onHistory)

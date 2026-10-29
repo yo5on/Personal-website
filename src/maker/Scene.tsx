@@ -113,21 +113,30 @@ function GradientBackground() {
 
 // Image-based light from three's procedural RoomEnvironment (no HDR asset to ship). A layout effect, so the
 // environment is set before R3F's first frame: set later, the face material compiled once without it and then
-// again with it (~1 s of blocking shader compile on a cold cache)
+// again with it (~1 s of blocking shader compile on a cold cache). The map is drawn on the GPU with no CPU copy, so
+// a restored GL context brings it back empty (the bust ~40% darker): it is drawn again then, never on ordinary renders.
 function Env({ intensity }: { intensity: number }) {
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
   useLayoutEffect(() => {
-    const pmrem = new THREE.PMREMGenerator(gl)
     const room = new RoomEnvironment()
-    const tex = pmrem.fromScene(room, 0.04).texture
-    scene.environment = tex
+    let pmrem: THREE.PMREMGenerator | null = null
+    let tex: THREE.Texture | null = null
+    const release = () => { tex?.dispose(); pmrem?.dispose() }
+    const build = () => {
+      release()
+      pmrem = new THREE.PMREMGenerator(gl)
+      tex = pmrem.fromScene(room, 0.04).texture
+      scene.environment = tex
+    }
+    build()
     scene.environmentIntensity = intensity
+    gl.domElement.addEventListener('webglcontextrestored', build)
     return () => {
+      gl.domElement.removeEventListener('webglcontextrestored', build)
       scene.environment = null
-      tex.dispose()
+      release()
       room.dispose()
-      pmrem.dispose()
     }
   }, [gl, scene, intensity])
   return null

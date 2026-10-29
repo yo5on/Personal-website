@@ -11,6 +11,10 @@ import { projects } from './data/content.js'
 import { pageFromHash } from './route.js'
 import './styles.css'
 
+// The app owns scroll (pages start at the top, studies overlay the page): the browser's own restoration on Back
+// would put a stale saved offset back when a study closes, e.g. 0 for a #maker entry reached from Origin.
+history.scrollRestoration = 'manual'
+
 // Project views are addressable as #work/<id>, using the browser's own history (no router).
 const CASE_HASH = /^#work\/([\w-]+)$/
 const projectFromHash = () => {

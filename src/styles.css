@@ -227,6 +227,12 @@ main { min-height: calc(100svh - 90px); } /* short pages (Contact) keep the foot
 @media (hover: hover) { .nav-aside a:hover { color: var(--stone); } .nav-aside a:hover::after { transform: scaleX(1); } }
 .nav-divider { width: 1px; height: 30px; background: var(--hair); margin-right: 4px; }
 .nav-menu { display: none; justify-self: end; color: var(--stone); padding: 10px 0; }
+/* Below ~900px the wordmark, five links, divider and icons no longer fit one row: the Menu button takes over (Nav.jsx matches) */
+@media (max-width: 900px) {
+  .nav { grid-template-columns: 1fr auto; }
+  .nav-links, .nav-aside { display: none; }
+  .nav-menu { display: block; position: relative; z-index: 31; }
+}
 
 .menu-sheet { position: fixed; inset: 0; z-index: 25; background: var(--navy-deep); display: flex; flex-direction: column; justify-content: center; gap: 48px; padding: 96px var(--gutter) 40px; }
 .menu-sheet nav { display: flex; flex-direction: column; gap: 4px; }
@@ -527,10 +533,8 @@ main { min-height: calc(100svh - 90px); } /* short pages (Contact) keep the foot
 /* ------------------------------------------------------------------ */
 @media (max-width: 760px) {
   html { scroll-padding-top: 64px; }
-  .nav { height: 64px; grid-template-columns: 1fr auto; }
+  .nav { height: 64px; }
   .nav::after { left: 0; right: 0; }
-  .nav-links, .nav-aside { display: none; }
-  .nav-menu { display: block; position: relative; z-index: 31; }
   .brand { font-size: 23px; }
   .brand-word { height: 30px; }
   .brand-mark { height: 30px; }
